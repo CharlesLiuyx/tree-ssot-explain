@@ -1,37 +1,59 @@
 #!/usr/bin/env node
-// 把 index.html 打包为单文件版本 index-embedded.html：
-// 内联全部 three.js 依赖，零外部请求，可直接双击打开。
-// 用法：node build-embedded.mjs （需要 node + npx，首次运行会自动拉取 esbuild）
-import { readFileSync, writeFileSync, rmSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+// 把模块化源码打包为单文件版本 index-embedded.html:
+// 内联全部 CSS(styles/)与 JS(src/ + vendor/ 的 three.js),零外部请求,可直接双击打开。
+// 用法:npm install 一次,之后 npm run build(或 node build-embedded.mjs)
+import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const SRC = 'index.html', OUT = 'index-embedded.html';
-const ENTRY = '.build-entry.mjs', BUNDLE = '.build-bundle.js';
+const OUT = 'index-embedded.html';
 
-const html = readFileSync(SRC, 'utf8');
+let esbuild;
+try {
+  esbuild = await import('esbuild');
+} catch {
+  console.error('未找到 esbuild —— 请先运行 npm install(esbuild 已锁定在 package.json 的 devDependencies)');
+  process.exit(1);
+}
 
-// 1. 抽出主模块代码，把 three/addons/ 导入改写为 vendor 相对路径
-const modMatch = html.match(/<script type="module">([\s\S]*?)<\/script>/);
-if (!modMatch) throw new Error('index.html 中找不到 <script type="module">');
-writeFileSync(ENTRY, modMatch[1].replaceAll("'three/addons/", "'./vendor/"));
+// three.js 裸导入解析到本地 vendor/(与 index.html 的 importmap 一一对应)
+const vendorPlugin = {
+  name: 'vendor-three',
+  setup(build) {
+    build.onResolve({ filter: /^three$/ }, () => ({ path: resolve('vendor/three.module.js') }));
+    build.onResolve({ filter: /^three\/addons\// }, args => ({
+      path: resolve('vendor', args.path.slice('three/addons/'.length)),
+    }));
+  },
+};
 
-// 2. esbuild 打包（'three' 裸导入 alias 到 vendor 文件）
-execSync(
-  `npx -y esbuild ${ENTRY} --bundle --minify --format=iife` +
-  ` --alias:three=./vendor/three.module.js --outfile=${BUNDLE}`,
-  { stdio: 'inherit' }
-);
-let bundle = readFileSync(BUNDLE, 'utf8');
-// 内联进 <script> 的防呆：转义可能提前终止脚本块的序列
+// 1. 打包 src/main.js(含 vendor 依赖)为 IIFE
+const result = await esbuild.build({
+  entryPoints: ['src/main.js'],
+  bundle: true,
+  minify: true,
+  format: 'iife',
+  write: false,
+  plugins: [vendorPlugin],
+});
+let bundle = result.outputFiles[0].text;
+// 内联进 <script> 的防呆:转义可能提前终止脚本块的序列
 bundle = bundle.replaceAll('</script', '<\\/script').replaceAll('<!--', '<\\!--');
 
-// 3. 组装：去掉 importmap，用内联 bundle 替换模块脚本，调整加载提示文案
-const out = html
+// 2. 收集并内联全部组件样式(按 index.html 里 <link> 的出现顺序)
+const html = readFileSync('index.html', 'utf8');
+const cssLinks = [...html.matchAll(/<link rel="stylesheet" href="\.\/(styles\/[^"]+)">\s*/g)];
+if (!cssLinks.length) throw new Error('index.html 中找不到 styles/ 样式链接');
+const css = cssLinks.map(m => `/* === ${m[1]} === */\n` + readFileSync(m[1], 'utf8')).join('\n');
+
+// 3. 组装:样式内联、去掉 importmap、模块入口替换为内联 bundle、调整加载提示文案
+let out = html;
+for (const m of cssLinks) out = out.replace(m[0], '');
+out = out
+  .replace('</head>', `<style>\n${css}</style>\n</head>`)
   .replace(/<script type="importmap">[\s\S]*?<\/script>\s*/, '')
-  .replace(/<script type="module">[\s\S]*?<\/script>/, () => `<script>\n${bundle}</script>`)
+  .replace(/<script type="module" src="\.\/src\/main\.js"><\/script>/, () => `<script>\n${bundle}</script>`)
   .replace('正在加载 3D 引擎…', '正在启动 3D 引擎…')
   .replace(/three\.js 加载失败[^']*/, '3D 引擎启动失败 —— 请换用现代浏览器（Chrome / Edge / Safari 最新版）');
 
 writeFileSync(OUT, out);
-rmSync(ENTRY); rmSync(BUNDLE);
 console.log(`✓ ${OUT} 已生成（${(out.length / 1024).toFixed(0)} KB）`);

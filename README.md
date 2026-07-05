@@ -37,19 +37,46 @@
 | `index.html` | 本地服务器 | 源码版，依赖走 `vendor/`（浏览器会拦截 file:// 下的 ES Module，需 http） |
 
 ```bash
-# 源码版：
-python3 -m http.server 4173
+# 源码版（零构建，原生 ES Module + importmap）：
+python3 -m http.server 4173   # 或 npm run serve
 # 打开 http://127.0.0.1:4173/
 ```
 
-修改 `index.html` 后重新生成内联版：
+修改源码后重新生成内联版：
 
 ```bash
-node build-embedded.mjs   # 需要 node + npx，产出 index-embedded.html
+npm install    # 仅首次：安装构建期依赖 esbuild（版本已锁定，无任何运行时依赖）
+npm run build  # 即 node build-embedded.mjs，产出 index-embedded.html
 ```
 
 依赖清单（`vendor/`，three.js r160，来源 cdn.jsdelivr.net）：
 `three.module.js`、`controls/OrbitControls.js`、`renderers/CSS2DRenderer.js`。
+
+## 代码结构
+
+数据、故事、场景、UI、编排五层分治，依赖只许向下（`main → app → ui / scene → core / story / data / config`），
+零循环依赖——改哪类东西，只动哪一层：
+
+```
+index.html            轻壳：boot 兜底 + importmap + <link> 样式 + <script src=src/main.js>
+build-embedded.mjs    esbuild 打包 src/main.js 并内联全部 CSS/JS 为单文件版
+styles/               CSS 按组件拆分（base / topbar / panel / hud / tooltip / labels / viewport）
+src/
+  config.js           调色板、树形体型、布局锚点、叙事焦点等常量
+  data/               【纯数据】树定义 / 交织 / 引力对 / 幽灵根 / 平台服务 / 策略 / 演化路径
+  story/              【纯文案】十步叙事（含机位）/ ~110 条名词解释
+  core/               【基础设施】state+runtime（跨系统状态 SSOT）/ 补间 / three 工具 / 场景登记表
+  scene/              【3D 系统】context（渲染器/相机/帧率调度）/ trees / tangles / gravity /
+                      ghosts / platform / strategies-fx / collapse / meta-tree / appearance
+  ui/                 【UI 组件】每个组件自带 DOM 模板与渲染：panel / dots / entropy-meter /
+                      legend / topbar / rotate-toggle / tooltip / node-info / terms / viewport-*
+  app/                【编排】director（setStage 总调度）/ viewport-history / hover / keymap / loop
+  main.js             唯一装配点：按依赖顺序显式建场景、注入 UI 回调、启动主循环
+```
+
+常见改动的落点：加一棵树 / 一条交织 → 只改 `src/data/`；改文案或名词解释 → 只改 `src/story/`；
+调 UI 样式 → 只改 `styles/`；加一个策略 → `data/strategies.js` 登记 + `scene/` 加视觉效果。
+数据引用（节点 gid）在启动时校验，写错会直接报错指出缺失节点。
 
 ## 叙事结构（10 步，← / → 或底部导航切换）
 
@@ -96,8 +123,10 @@ node build-embedded.mjs   # 需要 node + npx，产出 index-embedded.html
 
 ## 技术
 
-`index.html`：three.js r160（importmap → 本地 `vendor/`）+ OrbitControls + CSS2DRenderer，
-源码无构建步骤；`build-embedded.mjs` 用 esbuild 把全部依赖内联为单文件 `index-embedded.html`。
+three.js r160（importmap → 本地 `vendor/`）+ OrbitControls + CSS2DRenderer，
+源码版无构建步骤（原生 ES Module，入口 `src/main.js`）；
+`build-embedded.mjs` 用 esbuild（resolve 插件把 `three` 裸导入指到 `vendor/`）
+把全部 CSS/JS 内联为单文件 `index-embedded.html`。
 引力形变通过每帧更新节点位置与单位圆柱枝干实现；幽灵根的虚线 / 收编动画逐帧重建线段几何；
 树之树把每棵树坍缩为元节点，按所选演化路径的拓扑序逐个点亮（枝先长、球后冒），
 虚线垂向森林中该树的真身，两条路径可随时切换重播；

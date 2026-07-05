@@ -1,0 +1,16 @@
+/* 悬停提示:3D 对象详情 + 名词解释(.term 虚线下划线词条) */
+#tooltip{position:fixed;z-index:20;pointer-events:none;display:none;max-width:330px;
+  background:rgba(10,13,20,.94);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:10px 12px;
+  font-size:12.5px;line-height:1.65;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#tooltip b{font-size:13.5px}
+#tooltip .tt-kind{display:block;color:var(--sub);font-size:11.5px;margin:1px 0 4px}
+#tooltip .tt-mean{color:var(--amber);font-weight:600;margin-bottom:2px}
+#tooltip .tt-grav{color:var(--mg);font-weight:600;margin-top:4px}
+#tooltip .tt-ghost{color:var(--ghost);font-weight:600;margin-top:4px}
+#tooltip ul{margin:2px 0 0;padding-left:1.1em;color:var(--sub)}
+#tooltip li{margin:2px 0}
+#tooltip li b{color:var(--txt);font-size:12.5px}
+#tooltip .tt-desc{color:var(--txt);margin-top:2px}
+
+.term{border-bottom:1px dotted rgba(223,230,243,.45);cursor:help}
+.term:hover{border-bottom-style:solid;border-bottom-color:var(--gold)}
