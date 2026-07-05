@@ -144,7 +144,7 @@
     box-shadow:0 12px 40px rgba(0,0,0,.45);transition:filter .15s,transform .08s}
   #vp-back:hover{filter:brightness(1.15)}
   #vp-back:active{transform:translateX(-50%) scale(.95)}
-  #vp-back .kbd,#vp-map .kbd{font-size:10px;color:var(--sub);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+  #vp-back .kbd,#vp-map .kbd,#rotate-toggle .kbd{font-size:10px;color:var(--sub);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
 
   #vp-pill{position:fixed;right:18px;top:188px;z-index:10;display:none;align-items:center;gap:7px;
     cursor:pointer;background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
@@ -274,8 +274,8 @@
 
 <div id="dots"></div>
 
-<button id="rotate-toggle" type="button" title="暂停 / 恢复总览的自动旋转（也可直接拖动画面）">
-  <span class="rt-ico"></span><span class="rt-txt"></span>
+<button id="rotate-toggle" type="button" title="暂停 / 恢复总览的自动旋转（快捷键 Space，也可直接拖动画面）">
+  <span class="rt-ico"></span><span class="rt-txt"></span><span class="kbd">Space</span>
 </button>
 
 <button id="vp-back" type="button" title="返回上一个视口（快捷键 Esc）">← 返回上一步 <span class="kbd">Esc</span></button>
@@ -1546,6 +1546,7 @@ function syncRotateBtn(){
   b.querySelector('.rt-ico').textContent=autoRotateWanted?'⏸':'⟳';
   b.querySelector('.rt-txt').textContent=autoRotateWanted?'停止旋转':'自动旋转';
 }
+function toggleAutoRotate(){autoRotateWanted=!autoRotateWanted;syncRotateBtn();}
 
 function setStage(n){
   cancelTimers();
@@ -1605,11 +1606,7 @@ function setStage(n){
 
 $('next').onclick=()=>setStage((state.stage+1)%STAGES.length);
 $('prev').onclick=()=>setStage(Math.max(0,state.stage-1));
-$('rotate-toggle').onclick=()=>{autoRotateWanted=!autoRotateWanted;syncRotateBtn();};
-addEventListener('keydown',e=>{
-  if(e.key==='ArrowRight')setStage((state.stage+1)%STAGES.length);
-  if(e.key==='ArrowLeft')setStage(Math.max(0,state.stage-1));
-});
+$('rotate-toggle').onclick=toggleAutoRotate;
 
 /* ============================== 悬停 ============================== */
 const raycaster=new THREE.Raycaster();
@@ -1928,16 +1925,48 @@ $('vpm-clear').onclick=vpClear;
 $('vp-map-btn').onclick=openVpMap;
 $('vpm-close').onclick=closeVpMap;
 $('vp-map').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeVpMap(); }); // 点背板关闭
-addEventListener('keydown',e=>{
-  if(e.key==='Escape'){ vpMapOn?closeVpMap():vpBack(); }   // 全景开着时 Esc 先关全景，再按才是返回
-  else if((e.key==='v'||e.key==='V')&&!e.metaKey&&!e.ctrlKey&&!e.altKey){ vpMapOn?closeVpMap():openVpMap(); }
-});
 // 调试 / 自动化测试钩子（编程式导航 + 只读统计）
 window.__vp={
   zoomTo:gid=>{ const n=nodesById.get(gid); if(n)zoomToNode(n.mesh); },
   back:vpBack, home:()=>vpNavigate(vpRoot), clear:vpClear, depth:vpDepth,
   count:()=>vpCount(vpRoot), gc:()=>vpGCCount, gids:()=>[...nodesById.keys()],
 };
+
+/* ============================== 快捷键（按作用域分发） ============================== */
+// 作用域 = 「此刻键盘属于谁」：overlay 打开时独占键盘，场景域快捷键自动失效，互不串扰
+// （例如全景开着时 Esc/V 只负责关全景，←/→ 不会在模态背后偷偷切步骤）。
+// 分发规则：KEY_SCOPES 自上而下取第一个 when() 为真的域作为激活域；
+//           KEYMAP 只在激活域内匹配，命中即消费该按键（preventDefault），不跨域跌落。
+// 扩展方式：新增 overlay → 在 KEY_SCOPES 顶部加一个域；新增按键 → 在 KEYMAP 加一行。
+//           key 取 e.key 的值（字母一律写小写，空格写 'Space'）；
+//           when = 该键此刻是否可用的守卫（省略 = 恒可用）；
+//           repeat:true = 允许按住连发（默认忽略，避免开关类操作抖动）。
+const KEY_SCOPES=[
+  {id:'map',   when:()=>vpMapOn},   // 视口全景 overlay：模态，独占键盘
+  {id:'scene', when:()=>true},      // 3D 场景（默认域，兜底）
+];
+const KEYMAP=[
+  {scope:'map',   key:'Escape',     desc:'关闭全景',                run:closeVpMap},
+  {scope:'map',   key:'v',          desc:'关闭全景',                run:closeVpMap},
+  {scope:'scene', key:'Escape',     desc:'返回上一视口',            run:vpBack},
+  {scope:'scene', key:'v',          desc:'打开视口全景',            run:openVpMap},
+  {scope:'scene', key:'Space',      desc:'总览：暂停/恢复自动旋转', when:()=>state.stage===0, run:toggleAutoRotate},
+  {scope:'scene', key:'ArrowRight', desc:'下一步',                  repeat:true, run:()=>setStage((state.stage+1)%STAGES.length)},
+  {scope:'scene', key:'ArrowLeft',  desc:'上一步',                  repeat:true, run:()=>setStage(Math.max(0,state.stage-1))},
+];
+addEventListener('keydown',e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey)return;      // 带修饰键的组合留给浏览器 / 系统
+  const t=e.target instanceof Element?e.target:null;
+  if(t&&(t.isContentEditable||t.closest('input,textarea,select')))return;             // 正在输入：键盘完全让路
+  const key=e.key===' '?'Space':e.key.length===1?e.key.toLowerCase():e.key;
+  if((key==='Space'||key==='Enter')&&t&&t.closest('button,a,[role=button]'))return;   // 焦点在按钮上：交还原生激活语义
+  const scope=KEY_SCOPES.find(s=>s.when()).id;
+  const bind=KEYMAP.find(b=>b.scope===scope&&b.key===key&&(!b.when||b.when()));
+  if(!bind)return;
+  e.preventDefault();                            // 命中即消费（含被忽略的连发）
+  if(e.repeat&&!bind.repeat)return;
+  bind.run();
+});
 
 /* ============================== 主循环 ============================== */
 const clock=new THREE.Clock();
