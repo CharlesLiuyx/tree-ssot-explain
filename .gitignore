@@ -1,5 +1,8 @@
 # macOS
 .DS_Store
 
+# npm(仅构建期依赖 esbuild)
+node_modules/
+
 # Claude Code local machine-specific settings (paths, permissions)
 .claude/settings.local.json

@@ -1,0 +1,9 @@
+/* 顶栏:标题 + 快捷键提示 */
+#topbar{position:fixed;top:0;left:0;right:0;z-index:10;pointer-events:none;
+  padding:14px 22px;display:flex;justify-content:space-between;align-items:baseline;
+  background:linear-gradient(180deg,rgba(6,8,13,.85),transparent)}
+#topbar h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.06em}
+#topbar h1 em{font-style:normal;color:var(--gold)}
+#topbar .sub{color:var(--sub);font-size:12px;margin-top:2px}
+#topbar .keys{color:var(--sub);font-size:12px}
+#topbar .keys b{color:var(--txt);font-weight:600}
