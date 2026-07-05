@@ -15,15 +15,17 @@ export function stratOn(k) { return state.strat[k] && state.stage >= 7; }
 
 /* 跨系统运行时标志(写方 → 读方):
    gravityPull      0..1 引力强度,导演推进 → 引力/外观/悬停详情
-   linkDirty        树在移动,纠缠线需重建:引力与分层动画 → 主循环
-   hoveredMesh      当前悬停的 mesh:悬停系统 → 幽灵根(闪烁让位)
+   linkDirty        节点/树在移动,纠缠线与实例矩阵需重同步:引力/分层/平台动画 → 主循环
+   hovered          当前悬停的对象(节点记录/纠缠/引力对/幽灵根/元节点):悬停系统 → 幽灵根(闪烁让位)
+   hoveredKind      悬停对象类别('node'|'tangle'|'gravity'|'ghost'|'meta')
    highlightTangle  STEP 3 正在高亮的案例序号:导演 → 主循环
    tangleCounts     纠缠线分类计数:纠缠系统 → 策略统计栏
    metaPathIdx      STEP 9 当前演化路径:路径切换 → 树之树/面板 */
 export const runtime = {
   gravityPull: 0,
   linkDirty: false,
-  hoveredMesh: null,
+  hovered: null,
+  hoveredKind: '',
   highlightTangle: -1,
   tangleCounts: { red: 0, amber: 0, grey: 0, plat: 0 },
   metaPathIdx: 0,

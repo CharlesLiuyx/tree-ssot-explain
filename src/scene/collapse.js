@@ -2,10 +2,10 @@
 // 红色虚线在挣扎地闪烁,即「装不进上下文的含义」。
 
 import * as THREE from 'three';
-import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { GOLD, RED, FOCUS_ID } from '../config.js';
-import { nodesById, spinners } from '../core/registry.js';
+import { nodesById, spinners, nodeWorld } from '../core/registry.js';
 import { V3, disposeGroup } from '../core/three-utils.js';
+import { Label } from './labels.js';
 import { scene, camera } from './context.js';
 
 const aiGroup = new THREE.Group(); aiGroup.visible = false; scene.add(aiGroup);
@@ -20,9 +20,7 @@ const BEAM_TARGETS = [
 
 export function buildCollapse() {
   clearCollapse();
-  scene.updateMatrixWorld(true);
-  const focus = nodesById.get(FOCUS_ID);
-  const fp = focus.mesh.getWorldPosition(new THREE.Vector3());
+  const fp = nodeWorld(nodesById.get(FOCUS_ID), new THREE.Vector3());
   const orbPos = fp.clone().add(V3(-4, 11, 6));
   orb = new THREE.Group();
   const shellM = new THREE.Mesh(new THREE.IcosahedronGeometry(1.5, 1),
@@ -33,38 +31,39 @@ export function buildCollapse() {
   spinners.push({ obj: shellM, axis: V3(.3, 1, .2).normalize(), speed: .6 });
   const el = document.createElement('div');
   el.className = 'ailabel'; el.innerHTML = 'AI<span>attention 预算有限</span>';
-  const lab = new CSS2DObject(el); lab.position.set(0, 2.6, 0); orb.add(lab);
+  const lab = new Label(el); lab.position.set(0, 2.6, 0); orb.add(lab);
   aiGroup.add(orb);
 
   beams = BEAM_TARGETS.map((tg, i) => {
-    const n = nodesById.get(tg.id);
-    const p = n.mesh.getWorldPosition(new THREE.Vector3());
+    const p = nodeWorld(nodesById.get(tg.id), new THREE.Vector3());
     const geo = new THREE.BufferGeometry().setFromPoints([orbPos, p]);
     let line;
     if (tg.solid) {
-      line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: GOLD, transparent: true, opacity: .85 }));
+      line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: GOLD, transparent: true, opacity: .85, depthWrite: false }));
     } else {
-      line = new THREE.Line(geo, new THREE.LineDashedMaterial({ color: RED, transparent: true, opacity: .5, dashSize: .9, gapSize: .7 }));
+      line = new THREE.Line(geo, new THREE.LineDashedMaterial({ color: RED, transparent: true, opacity: .5, dashSize: .9, gapSize: .7, depthWrite: false }));
       line.computeLineDistances();
     }
     line.userData.flicker = !tg.solid; line.userData.ph = i * 1.3;
+    line.renderOrder = 2;
     aiGroup.add(line);
     return line;
   });
   const mainGeo = new THREE.BufferGeometry().setFromPoints([orbPos, fp]);
-  const main = new THREE.Line(mainGeo, new THREE.LineBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: .9 }));
+  const main = new THREE.Line(mainGeo, new THREE.LineBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: .9, depthWrite: false }));
+  main.renderOrder = 2;
   aiGroup.add(main);
 
   focusRing = new THREE.Mesh(new THREE.TorusGeometry(1.5, .07, 8, 48),
     new THREE.MeshBasicMaterial({ color: RED, transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false }));
   focusRing.position.copy(fp);
+  focusRing.renderOrder = 4;
   aiGroup.add(focusRing);
   aiGroup.visible = true;
 }
 
 export function clearCollapse() {
   for (const s of [...spinners]) if (orb && s.obj.parent === orb) spinners.splice(spinners.indexOf(s), 1);
-  aiGroup.traverse(o => { if (o.isCSS2DObject && o.element) o.element.remove(); });
   disposeGroup(aiGroup);
   aiGroup.visible = false; orb = null; beams = []; focusRing = null;
 }

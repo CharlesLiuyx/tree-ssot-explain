@@ -1,5 +1,6 @@
-/* 悬停提示:3D 对象详情 + 名词解释(.term 虚线下划线词条) */
-#tooltip{position:fixed;z-index:20;pointer-events:none;display:none;max-width:330px;
+/* 悬停提示:3D 对象详情 + 名词解释(.term 虚线下划线词条)。
+   left/top 锚定在 0,跟随指针只写 transform(合成器合成,不触发重排) */
+#tooltip{position:fixed;left:0;top:0;z-index:20;pointer-events:none;display:none;max-width:330px;will-change:transform;
   background:rgba(10,13,20,.94);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:10px 12px;
   font-size:12.5px;line-height:1.65;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 #tooltip b{font-size:13.5px}

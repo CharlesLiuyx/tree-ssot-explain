@@ -2,13 +2,13 @@
 // 金色序号 = 生长次序;虚线垂向下方森林里这棵树的真身。切路径(runtime.metaPathIdx)后重新生长。
 
 import * as THREE from 'three';
-import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { GOLD, lvlOf } from '../config.js';
 import { META_PATHS } from '../data/meta-paths.js';
 import { treeById } from '../core/registry.js';
 import { runtime } from '../core/state.js';
 import { easeOut } from '../core/tween.js';
-import { V3, makeCylinder, setCylinder, disposeGroup, _v2, _v3 } from '../core/three-utils.js';
+import { V3, makeCylinder, setCylinder, makeLine2, setLine2, disposeGroup, _v2, _v3 } from '../core/three-utils.js';
+import { Label } from './labels.js';
 import { scene, clock } from './context.js';
 import { boundaryCenter } from './ghosts.js';
 
@@ -20,8 +20,7 @@ let metaStart = 0;
 const META_STEP = .72, META_GROW = .62;
 
 export function clearMeta() {
-  metaGroup.traverse(o => { if (o.isCSS2DObject && o.element) o.element.remove(); });
-  disposeGroup(metaGroup);
+  disposeGroup(metaGroup); // Label 元素随 removed 事件自动摘除
   metaItems = [];
 }
 
@@ -58,7 +57,7 @@ export function buildMetaTree() {
     el.className = 'mlabel';
     el.innerHTML = `<span style="color:#${color.toString(16).padStart(6, '0')}"><span class="seq">${i + 1}</span>${tr.def.short}</span>` +
       (s.p ? '' : '<span class="mroot">元根 · 第一性假设</span>');
-    const lab = new CSS2DObject(el); lab.position.set(0, tr.def.kind === 'biz' ? 4.6 : 4.1, 0); lab.visible = false;
+    const lab = new Label(el); lab.position.set(0, tr.def.kind === 'biz' ? 4.6 : 4.1, 0); lab.visible = false;
     orb.add(lab);
     let edge = null, parentPos = null;
     if (s.p) {
@@ -66,8 +65,8 @@ export function buildMetaTree() {
       edge = makeCylinder(.2, new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: .4 }));
       edge.visible = false; metaGroup.add(edge);
     }
-    const drop = new THREE.Line(new THREE.BufferGeometry(),
-      new THREE.LineDashedMaterial({ color, transparent: true, opacity: .22, dashSize: 1.6, gapSize: 1.3 }));
+    const drop = makeLine2(new THREE.LineDashedMaterial({ color, transparent: true, opacity: .22, dashSize: 1.6, gapSize: 1.3, depthWrite: false }), true);
+    drop.renderOrder = 2; // 垂线画在退成背景的森林节点之后
     drop.visible = false; metaGroup.add(drop);
     metaItems.push({ s, i, tr, orb, lab, edge, parentPos, pos, drop, rim, at: .35 + i * META_STEP });
   });
@@ -102,8 +101,7 @@ export function updateMeta(t) {
     m.drop.visible = dropOn;
     if (dropOn) {
       _v3.set(m.tr.group.position.x, lvlOf(m.tr.def.kind, 0).y, m.tr.group.position.z).sub(metaGroup.position);
-      m.drop.geometry.setFromPoints([m.pos, _v3]);
-      m.drop.computeLineDistances();
+      setLine2(m.drop, m.pos, _v3);
       m.drop.material.opacity = .2 * Math.min(1, (ok - .4) / .6) * (.7 + .3 * Math.sin(t * 1.6 + m.i));
     }
   }

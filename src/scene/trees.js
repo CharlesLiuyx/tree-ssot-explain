@@ -1,50 +1,35 @@
-// 建树系统:按 TREE_DEFS 生成十六棵树(节点球/枝干/树标签/SDD 脉冲/根环),写入 core/registry。
+// 建树系统:按 TREE_DEFS 生成十六棵树。节点是纯记录(渲染走 scene/pools 实例化池),
+// 静态枝干烘焙为每树一个合并网格,受引力牵动的枝保留独立圆柱逐帧形变。
 // 树形由确定性 rng 决定——调用顺序即形状,勿调整初始化次序。
 
 import * as THREE from 'three';
-import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-import { GOLD, GREEN, lvlOf } from '../config.js';
+import { GOLD, lvlOf } from '../config.js';
 import { TREE_DEFS } from '../data/trees.js';
-import { nodesById, trees, allNodes, treeById, spinners, pulses, rootRings, labelEls } from '../core/registry.js';
-import { V3, rng, makeCylinder, setCylinder, mergeMeshGeoms, sphereGeo } from '../core/three-utils.js';
+import { nodesById, trees, allNodes, treeById, pulses, labelEls } from '../core/registry.js';
+import { V3, rng, makeCylinder, setCylinder, bakeCylinders, statik } from '../core/three-utils.js';
+import { addNodeSlot, addRimSlot, addShellSlot, addDotSlot, addRingSlot } from './pools.js';
+import { Label } from './labels.js';
 import { scene } from './context.js';
+
+export const flexEdges = []; // 受引力牵动的枝干 {tree,e}(gravity 系统逐帧 setCylinder)
 
 function addNode(tree, gid, name, level, pos, hasChildren) {
   const size = lvlOf(tree.def.kind, level).s;
   const color = level === 0 ? GOLD : tree.def.color;
-  const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: .38, roughness: .35, metalness: .15, transparent: true, opacity: 1 });
-  const mesh = new THREE.Mesh(sphereGeo(size, 18, 12), mat);
-  mesh.position.copy(pos);
-  const node = { gid, name, level, tree: tree.idx, mesh, mat, base: color, tangles: [], halos: [], rim: null, shell: null,
-    gravity: null, ghost: null, anchor: pos.clone(), hasChildren };
-  mesh.userData.node = node;
-  tree.group.add(mesh);
+  const node = { gid, name, level, tree: tree.idx, grp: tree.group,
+    pos: pos.clone(), anchor: pos.clone(), radius: size, hasChildren,
+    base: color, color, opacity: 1, emissiveK: .38,
+    tangles: [], haloSlots: [], gravity: null, ghost: null,
+    idx: -1, rimIdx: -1, shellIdx: -1, rimOn: false, shellOn: false, mat: null };
+  addNodeSlot(node);
   if (level === 0) {
-    const rim = new THREE.Mesh(sphereGeo(size * 1.45, 12, 9),
-      new THREE.MeshBasicMaterial({ color: GOLD, wireframe: true, transparent: true, opacity: .4 }));
-    mesh.add(rim); node.rim = rim;
-    spinners.push({ obj: rim, axis: V3(0, 1, 0), speed: .25 });
+    addRimSlot(node); // 根:金色线框描边(自旋)
   } else if (!hasChildren) {
-    // 叶子:绿描边(AI 自由区)+ TDD 护栏壳
-    const rim = new THREE.Mesh(sphereGeo(size * 1.42, 10, 8),
-      new THREE.MeshBasicMaterial({ color: GREEN, wireframe: true, transparent: true, opacity: .24 }));
-    mesh.add(rim); node.rim = rim;
-    const shell = new THREE.Mesh(new THREE.IcosahedronGeometry(size * 1.95, 1),
-      new THREE.MeshBasicMaterial({ color: GREEN, wireframe: true, transparent: true, opacity: .5 }));
-    shell.visible = false; mesh.add(shell); node.shell = shell;
-    spinners.push({ obj: shell, axis: V3(rng() - .5, 1, rng() - .5).normalize(), speed: .35 });
+    addRimSlot(node); // 叶子:绿描边(AI 自由区)
+    addShellSlot(node, V3(rng() - .5, 1, rng() - .5).normalize()); // TDD 护栏壳
   }
   nodesById.set(gid, node); allNodes.push(node); tree.nodes.push(node);
   return node;
-}
-
-function makeEdge(tree, na, nb) {
-  const mesh = makeCylinder(.055, tree.edgeMat);
-  setCylinder(mesh, na.mesh.position, nb.mesh.position);
-  tree.group.add(mesh);
-  const e = { na, nb, mesh };
-  tree.edges.push(e);
-  return e;
 }
 
 function buildNodeRec(tree, def, level, angle, parent) {
@@ -57,7 +42,7 @@ function buildNodeRec(tree, def, level, angle, parent) {
     pos = V3(Math.cos(angle) * r, y, Math.sin(angle) * r);
   }
   const node = addNode(tree, tree.def.id + '.' + def.id, def.n, level, pos, !!(def.c && def.c.length));
-  if (parent) makeEdge(tree, parent, node);
+  if (parent) tree.edges.push({ na: parent, nb: node, mesh: null });
   (def.c || []).forEach((cd, i) => {
     let a2;
     if (level === 0) a2 = -Math.PI / 2 + i * (Math.PI * 2 / def.c.length) + .42;
@@ -82,38 +67,40 @@ export function buildTrees() {
     trees.push(tree); treeById[def.id] = tree;
     buildNodeRec(tree, { id: 'root', n: def.rootName, c: def.l1 }, 0, 0, null);
 
-    // SDD 脉冲点(沿树边流动,端点取节点实时位置——引力形变时自动跟随)
-    tree.edges.forEach(e => {
-      const dot = new THREE.Mesh(new THREE.SphereGeometry(.14, 8, 6),
-        new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: .95, blending: THREE.AdditiveBlending, depthWrite: false }));
-      dot.visible = false; group.add(dot);
-      pulses.push({ dot, e, phase: rng() });
-    });
-    // SDD 根环
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(2.1, .05, 8, 48),
-      new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: .7, blending: THREE.AdditiveBlending, depthWrite: false }));
-    ring.position.set(0, lvlOf(def.kind, 0).y, 0); ring.rotation.x = Math.PI / 2; ring.visible = false;
-    group.add(ring); rootRings.push(ring);
+    // SDD 脉冲点(沿树边流动,发光点池里的一个槽位)
+    tree.edges.forEach(e => pulses.push({ slot: addDotSlot(.14), e, phase: rng() }));
+    // SDD 根环(实例化池)
+    addRingSlot(group, lvlOf(def.kind, 0).y);
 
     // 树标签
     const el = document.createElement('div');
     el.className = 'tlabel';
     el.innerHTML = `<b style="color:#${def.color.toString(16).padStart(6, '0')}">${def.name}</b><span class="ssot">root = SSOT</span><i>${def.constraint}<br>${def.tradeoff}</i>`;
-    const lab = new CSS2DObject(el); lab.position.set(0, lvlOf(def.kind, 0).y + 3.4, 0); group.add(lab);
+    const lab = new Label(el); lab.position.set(0, lvlOf(def.kind, 0).y + 3.4, 0); group.add(lab);
     labelEls.push(el);
   });
 }
 
-// 静态枝干(两端都不受引力牵动 = 永不形变)合并成每棵树一个网格:
-// 上百条各自 draw call + 各自透明排序 → 每棵树 1 条。受引力的枝保留独立、逐帧 setCylinder。
+// 枝干:两端都不受引力牵动的静态枝,整棵树烘焙成一个合并网格(上百条 draw call → 1 条);
+// 受引力的枝保留独立圆柱、由 gravity 系统逐帧 setCylinder。
 // 必须在引力登记(scene/gravity.js)之后调用——依赖 node.gravity 判定动/静。
-export function mergeStaticBranches() {
+export function buildBranches() {
   for (const tr of trees) {
-    const staticEdges = tr.edges.filter(e => !(e.na.gravity || e.nb.gravity));
-    if (staticEdges.length < 2) continue; // 太少不值当合并
-    const merged = new THREE.Mesh(mergeMeshGeoms(staticEdges.map(e => e.mesh)), tr.edgeMat);
+    const statics = [];
+    for (const e of tr.edges) {
+      if (e.na.gravity || e.nb.gravity) {
+        e.mesh = makeCylinder(.055, tr.edgeMat);
+        setCylinder(e.mesh, e.na.pos, e.nb.pos);
+        tr.group.add(e.mesh);
+        flexEdges.push({ tree: tr, e });
+      } else {
+        statics.push({ a: e.na.anchor, b: e.nb.anchor });
+      }
+    }
+    if (!statics.length) continue;
+    const { geo } = bakeCylinders(statics, .055);
+    const merged = new THREE.Mesh(geo, tr.edgeMat);
     merged.frustumCulled = false;
-    tr.group.add(merged);
-    for (const e of staticEdges) { tr.group.remove(e.mesh); e.mesh.geometry.dispose(); e.mesh = null; }
+    tr.group.add(statik(merged));
   }
 }

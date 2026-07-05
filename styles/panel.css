@@ -1,6 +1,6 @@
 /* 叙事面板:步骤文案 / 案例栏 / 策略开关 / 统计 / 上下步导航 */
 #panel{position:fixed;left:18px;top:72px;z-index:10;width:408px;max-height:calc(100vh - 170px);
-  overflow-y:auto;background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  overflow-y:auto;background:var(--card);
   border:1px solid var(--line);border-radius:14px;padding:16px 18px 14px;box-shadow:0 12px 40px rgba(0,0,0,.45)}
 #panel::-webkit-scrollbar{width:6px}
 #panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:3px}

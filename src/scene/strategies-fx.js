@@ -5,25 +5,28 @@ import { WALL_XS } from '../config.js';
 import { trees } from '../core/registry.js';
 import { stratOn, runtime } from '../core/state.js';
 import { tweenVec } from '../core/tween.js';
-import { V3 } from '../core/three-utils.js';
+import { V3, statik } from '../core/three-utils.js';
 import { scene } from './context.js';
 import { platformGroup } from './platform.js';
 
-/* 分层:半透明墙 + 白色接口环(跨层调用的唯一通道) */
+/* 分层:半透明墙 + 白色接口环(跨层调用的唯一通道)。
+   全部静态、不写深度——节点在墙后仍能正常透出(与实例池的固定绘制顺序兼容)。 */
 export const gatesGroup = new THREE.Group(); gatesGroup.visible = false; scene.add(gatesGroup);
 WALL_XS.forEach(x => {
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(62, 28),
     new THREE.MeshBasicMaterial({ color: 0x9fb6ff, transparent: true, opacity: .035, side: THREE.DoubleSide, depthWrite: false }));
   wall.rotation.y = Math.PI / 2; wall.position.set(x, 14, 0);
-  gatesGroup.add(wall);
+  gatesGroup.add(statik(wall));
   const edge = new THREE.LineSegments(new THREE.EdgesGeometry(wall.geometry),
-    new THREE.LineBasicMaterial({ color: 0x9fb6ff, transparent: true, opacity: .18 }));
+    new THREE.LineBasicMaterial({ color: 0x9fb6ff, transparent: true, opacity: .18, depthWrite: false }));
   edge.rotation.y = Math.PI / 2; edge.position.copy(wall.position);
-  gatesGroup.add(edge);
+  edge.renderOrder = 2;
+  gatesGroup.add(statik(edge));
   const ring = new THREE.Mesh(new THREE.TorusGeometry(1.7, .08, 8, 48),
     new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false }));
   ring.rotation.y = Math.PI / 2; ring.position.set(x, 9, 0);
-  gatesGroup.add(ring);
+  ring.renderOrder = 2; // 接口环画在节点之后:洞口的白环不被前排节点盖掉
+  gatesGroup.add(statik(ring));
 });
 
 /* Loops:轮末清理的扫描雷达 */

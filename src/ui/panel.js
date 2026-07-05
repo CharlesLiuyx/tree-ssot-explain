@@ -67,15 +67,23 @@ export function setCaseBox(html) {
   annotateTerms($('case-box'));
 }
 
-/* STEP 7-8:纠缠线分类统计(纠缠线每次重建后由装配好的回调刷新) */
+/* STEP 7-8:纠缠线分类统计(纠缠线每次重建后由装配好的回调刷新)。
+   迁移动画期间每帧都会重建纠缠线——内容没变就不碰 DOM。 */
+let lastStats = null;
 export function updateStats() {
   const el = $('tangle-stats');
-  if (state.stage < 7 || state.stage > 8) { el.textContent = ''; return; }
+  if (state.stage < 7 || state.stage > 8) {
+    if (lastStats !== '') { lastStats = ''; el.textContent = ''; }
+    return;
+  }
   const { red, amber, grey, plat } = runtime.tangleCounts;
-  el.innerHTML =
+  const html =
     `偶然交织：<span class="r">${red} 条仍在纠缠</span> · <span class="am">${amber} 条已契约化</span> · <span class="dim">${grey} 条循环中消解</span> · <span class="g">${plat} 条已平台化</span><br>` +
     `本征引力：${state.strat.fusion ? `<span class="g">${GRAVITY.length} 对已共域（金色气泡）</span>` : `<span class="mg">${GRAVITY.length} 对仍在拉扯</span>`}<br>` +
     `图外真相：${state.strat.explicit ? `<span class="g">${GHOSTS.length} 个幽灵根已收编入库</span>` : `<span class="gh">${GHOSTS.length} 个幽灵根游离在外</span>`}`;
+  if (html === lastStats) return;
+  lastStats = html;
+  el.innerHTML = html;
   annotateTerms(el);
 }
 
