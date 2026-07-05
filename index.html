@@ -136,6 +136,85 @@
   .glabel b{display:block;font-size:12.5px}
   .glabel span{display:block;font-size:10px;color:var(--sub);font-weight:400}
 
+  /* ===== 点击 Zoom in · 视口树形历史 · 节点详情 ===== */
+  #vp-back{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:12;display:none;align-items:center;gap:7px;
+    cursor:pointer;background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border:1px solid rgba(255,209,102,.5);border-radius:99px;padding:7px 15px;color:var(--gold);
+    font-family:inherit;font-size:12.5px;font-weight:600;letter-spacing:.02em;
+    box-shadow:0 12px 40px rgba(0,0,0,.45);transition:filter .15s,transform .08s}
+  #vp-back:hover{filter:brightness(1.15)}
+  #vp-back:active{transform:translateX(-50%) scale(.95)}
+  #vp-back .kbd,#vp-map .kbd{font-size:10px;color:var(--sub);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+
+  #vp-panel{position:fixed;right:18px;top:188px;z-index:10;width:252px;display:none;
+    max-height:calc(100vh - 372px);overflow-y:auto;
+    background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+  #vp-panel::-webkit-scrollbar{width:6px}
+  #vp-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:3px}
+  #vp-panel .vp-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:9px}
+  #vp-panel .vp-head .vp-title{font-size:11px;color:var(--sub);letter-spacing:.14em;white-space:nowrap}
+  #vp-panel .vp-acts{display:flex;gap:5px}
+  #vp-panel .vp-act{cursor:pointer;font-size:11.5px;color:var(--gold);border:1px solid rgba(255,209,102,.35);
+    border-radius:99px;padding:2px 9px;transition:filter .15s;white-space:nowrap}
+  #vp-panel .vp-act:hover{filter:brightness(1.2)}
+
+  #vp-detail{border-radius:9px;background:rgba(255,255,255,.045);border:1px solid var(--line);padding:9px 11px;
+    font-size:12.5px;line-height:1.62;margin-bottom:10px}
+  #vp-detail b{font-size:13.5px}
+  #vp-detail .tt-kind{display:block;color:var(--sub);font-size:11px;margin:2px 0 5px}
+  #vp-detail .tt-mean{color:var(--amber);font-weight:600;margin-bottom:2px}
+  #vp-detail .tt-grav{color:var(--mg);font-weight:600;margin-top:4px}
+  #vp-detail .tt-ghost{color:var(--ghost);font-weight:600;margin-top:4px}
+  #vp-detail ul{margin:2px 0 0;padding-left:1.1em;color:var(--sub)}
+  #vp-detail li{margin:2px 0}
+  #vp-detail li b{color:var(--txt);font-size:12px}
+  #vp-detail .vp-empty{color:var(--sub);text-align:center;padding:3px 0}
+  #vp-detail .vp-empty b{color:var(--gold)}
+
+  #vp-tree{font-size:12px}
+  #vp-panel .vp-sub{font-size:10.5px;color:var(--sub);letter-spacing:.1em;margin:0 0 4px 2px}
+  .vp-row{position:relative;display:flex;align-items:center;gap:7px;padding:4px 7px;border-radius:7px;cursor:pointer;
+    color:var(--sub);white-space:nowrap;overflow:hidden;transition:background .12s,color .12s}
+  .vp-row:hover{background:rgba(255,255,255,.06);color:var(--txt)}
+  .vp-row .vp-dot{flex:0 0 auto;width:7px;height:7px;border-radius:99px;background:currentColor;opacity:.55}
+  .vp-row .vp-name{overflow:hidden;text-overflow:ellipsis}
+  .vp-row.cur{background:rgba(255,209,102,.14);color:var(--gold);font-weight:700}
+  .vp-row.cur .vp-dot{opacity:1;box-shadow:0 0 8px currentColor}
+
+  /* ===== 视口历史 · 全景总览（V 键 / ⛶ 按钮）===== */
+  #vp-map{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;
+    background:rgba(4,6,11,.66);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+  #vp-map.open{display:flex}
+  #vp-map .vpm-card{width:min(780px,92vw);max-height:80vh;display:flex;flex-direction:column;
+    background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.6);overflow:hidden}
+  #vp-map .vpm-head{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line)}
+  #vp-map .vpm-title{font-size:13px;font-weight:700;letter-spacing:.08em;white-space:nowrap}
+  #vp-map .vpm-stats{flex:1;font-size:11.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #vp-map .vpm-close{cursor:pointer;background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:99px;
+    color:var(--txt);font-family:inherit;font-size:12px;font-weight:600;padding:5px 12px;display:inline-flex;align-items:center;gap:6px}
+  #vp-map .vpm-close:hover{background:rgba(255,255,255,.13)}
+  #vp-map .vpm-body{overflow:auto;padding:14px 18px}
+  #vp-map .vpm-body::-webkit-scrollbar{width:6px;height:6px}
+  #vp-map .vpm-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:3px}
+  #vp-map .vpm-empty{color:var(--sub);font-size:12.5px;padding:6px 2px}
+  #vp-map .vpm-foot{padding:10px 16px;border-top:1px solid var(--line);font-size:11px;color:var(--sub);line-height:1.6}
+  .vpm-tree,.vpm-tree ul{list-style:none;margin:0;padding:0}
+  .vpm-tree ul{padding-left:30px;position:relative}
+  .vpm-tree ul::before{content:"";position:absolute;left:12px;top:-4px;bottom:14px;border-left:1px solid rgba(255,255,255,.15)}
+  .vpm-tree li{position:relative;margin:7px 0}
+  .vpm-tree ul li::before{content:"";position:absolute;left:-18px;top:13px;width:15px;border-top:1px solid rgba(255,255,255,.15)}
+  .vpm-chip{display:inline-flex;align-items:center;gap:8px;max-width:100%;cursor:pointer;
+    background:rgba(255,255,255,.045);border:1px solid var(--line);border-radius:9px;color:var(--txt);
+    font-family:inherit;font-size:12.5px;padding:5px 11px;transition:border-color .12s,background .12s}
+  .vpm-chip:hover{border-color:rgba(255,209,102,.55);background:rgba(255,209,102,.07)}
+  .vpm-chip .dot{flex:0 0 auto;width:8px;height:8px;border-radius:99px}
+  .vpm-chip .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .vpm-chip .idx{color:var(--sub);font-size:10px}
+  .vpm-chip.onpath{border-color:rgba(255,209,102,.4)}
+  .vpm-chip.cur{background:rgba(255,209,102,.15);border-color:var(--gold);color:var(--gold);font-weight:700}
+  .vpm-chip .badge{font-size:10px;background:var(--gold);color:#1a1408;border-radius:99px;padding:1px 7px;font-weight:700}
+
   @media (max-width:980px){
     #panel{width:min(86vw,408px)}
     #meter{width:200px}
@@ -152,7 +231,7 @@
     <h1>多树形结构 · <em>节点交织</em>模型</h1>
     <div class="sub">Multi-Tree / Node-Entanglement Model —— 为什么项目复杂到某一刻，AI 突然就「糊」了</div>
   </div>
-  <div class="keys">拖动旋转 · 滚轮缩放 · <b>←/→</b> 切换步骤 · 悬停节点 / 红线 / 引力束 / 幽灵根看详情</div>
+  <div class="keys">拖动旋转 · 滚轮缩放 · <b>点击节点</b> Zoom in · <b>Esc</b> 返回 · <b>V</b> 视口全景 · <b>←/→</b> 切换步骤 · 悬停看详情</div>
 </header>
 
 <aside id="panel">
@@ -191,6 +270,33 @@
 <button id="rotate-toggle" type="button" title="暂停 / 恢复总览的自动旋转（也可直接拖动画面）">
   <span class="rt-ico"></span><span class="rt-txt"></span>
 </button>
+
+<button id="vp-back" type="button" title="返回上一个视口（快捷键 Esc）">← 返回上一步 <span class="kbd">Esc</span></button>
+
+<aside id="vp-panel">
+  <div class="vp-head">
+    <span class="vp-title">视口历史</span>
+    <span class="vp-acts">
+      <span class="vp-act" id="vp-map-btn" title="查看视口历史全景（快捷键 V）">⛶ 全景</span>
+      <span class="vp-act" id="vp-home" title="回到本步的起始视角">⌂ 起始视角</span>
+    </span>
+  </div>
+  <div id="vp-detail"></div>
+  <div class="vp-sub" id="vp-sub">导航树（点击任意节点跳转）</div>
+  <div id="vp-tree"></div>
+</aside>
+
+<div id="vp-map">
+  <div class="vpm-card">
+    <div class="vpm-head">
+      <span class="vpm-title">视口历史 · 全景</span>
+      <span class="vpm-stats" id="vpm-stats"></span>
+      <button class="vpm-close" id="vpm-close" type="button">✕ 关闭 <span class="kbd">Esc</span></button>
+    </div>
+    <div class="vpm-body" id="vpm-body"></div>
+    <div class="vpm-foot">点击任意视口立即跳转（120ms）· <b>V</b> 键随时开关全景 · 每一步一棵历史树，切换步骤后重新生长 · 超过 30 个视口自动回收最久未访问的旁支叶子——根与当前路径永不回收</div>
+  </div>
+</div>
 
 <div id="tooltip"></div>
 
@@ -476,34 +582,35 @@ grid.material.transparent=true; grid.material.opacity=.3; scene.add(grid);
 function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 const rng=mulberry32(42);
 const easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const easeOut=t=>1-Math.pow(1-t,3); // 快出慢停：Zoom in / 返回时更「爽快」
 const UP=V3(0,1,0);
 const _v1=new THREE.Vector3(), _v2=new THREE.Vector3(), _v3=new THREE.Vector3(), _v4=new THREE.Vector3();
 
 const tweens=new Set();
-function tween(dur,update,done){
-  const tw={t0:performance.now(),dur:dur*1000,update,done};
+function tween(dur,update,done,ease){
+  const tw={t0:performance.now(),dur:dur*1000,update,done,ease};
   tweens.add(tw); return tw;
 }
 function stepTweens(){
   const now=performance.now();
   for(const tw of [...tweens]){
     const k=Math.min(1,(now-tw.t0)/tw.dur);
-    tw.update(easeIO(k));
+    tw.update((tw.ease||easeIO)(k));
     if(k>=1){tweens.delete(tw); tw.done&&tw.done();}
   }
 }
-function tweenVec(v,to,dur,onUpdate,onDone){
+function tweenVec(v,to,dur,onUpdate,onDone,ease){
   const from=v.clone(), tgt=to.clone?to.clone():V3(to[0],to[1],to[2]);
-  return tween(dur,k=>{v.lerpVectors(from,tgt,k); onUpdate&&onUpdate();},onDone);
+  return tween(dur,k=>{v.lerpVectors(from,tgt,k); onUpdate&&onUpdate();},onDone,ease);
 }
 let camTweenA=null,camTweenB=null;
-function flyCamera(pos,tgt,dur=1.6){
+function flyCamera(pos,tgt,dur=1.6,ease){
   if(camTweenA)tweens.delete(camTweenA); if(camTweenB)tweens.delete(camTweenB);
   // 窄视口（竖屏/分栏）时把相机按比例推远，避免两侧的树被裁掉
   const k=camera.aspect<1.45?Math.min(1.8,1.45/camera.aspect):1;
   const p=tgt.clone().add(pos.clone().sub(tgt).multiplyScalar(k));
-  camTweenA=tweenVec(camera.position,p,dur);
-  camTweenB=tweenVec(controls.target,tgt,dur);
+  camTweenA=tweenVec(camera.position,p,dur,null,null,ease);
+  camTweenB=tweenVec(controls.target,tgt,dur,null,null,ease);
 }
 // 单位长度圆柱 + scale.y 拉伸，便于每帧更新（引力形变时枝干跟着拉长）
 function makeCylinder(r,mat){
@@ -1419,7 +1526,7 @@ function cancelTimers(){
 // 自动旋转 = 用户意图 × 当前步骤（仅总览自动旋转；用户可随时暂停/恢复，意图跨步骤保留）
 let autoRotateWanted=true;
 function syncRotateBtn(){
-  controls.autoRotate=autoRotateWanted&&state.stage===0;
+  controls.autoRotate=autoRotateWanted&&state.stage===0&&vpDepth()===0; // Zoom in 聚焦时不自转
   const b=$('rotate-toggle');
   if(!b)return;
   b.style.display=state.stage===0?'inline-flex':'none'; // 仅总览会自动旋转，其余步骤按钮无意义
@@ -1447,15 +1554,20 @@ function setStage(n){
     tween(1.6,k=>{gravityPull=g0+(gTarget-g0)*k;linkDirty=true;},()=>{linkDirty=true;refreshNodes();});
   }
 
+  let camPos,camTgt;
   if(n===6){
     applyState(); buildCollapse();
     const fp=nodesById.get(FOCUS_ID).mesh.getWorldPosition(new THREE.Vector3());
-    flyCamera(fp.clone().add(V3(10,8,17)),fp.clone().add(V3(-1,4,2)),1.8);
+    camPos=fp.clone().add(V3(10,8,17)); camTgt=fp.clone().add(V3(-1,4,2));
+    flyCamera(camPos,camTgt,1.8);
   }else{
     clearCollapse(); applyState();
     const c=STAGES[n].cam;
-    flyCamera(V3(...c[0]),V3(...c[1]),1.7);
+    camPos=V3(...c[0]); camTgt=V3(...c[1]);
+    flyCamera(camPos,camTgt,1.7);
   }
+  // 每切一步 = 一棵新的视口历史树，根 = 本步的起始视角
+  vpReset(camPos,camTgt,STAGES[n].chip.split('·').pop().trim());
 
   if(n===3){ // 逐条揭示偶然交织
     revealTimer=setInterval(()=>{
@@ -1497,7 +1609,7 @@ let overUI=false;
 addEventListener('pointermove',e=>{
   pointer.x=(e.clientX/innerWidth)*2-1;
   pointer.y=-(e.clientY/innerHeight)*2+1;
-  overUI=!!(e.target&&e.target.closest&&e.target.closest('#panel,#topbar,#meter,#legend,#dots,#rotate-toggle'));
+  overUI=!!(e.target&&e.target.closest&&e.target.closest('#panel,#topbar,#meter,#legend,#dots,#rotate-toggle,#vp-panel,#vp-back,#vp-map'));
   tooltip.style.left=Math.min(e.clientX+16,innerWidth-350)+'px';
   tooltip.style.top=Math.min(e.clientY+16,innerHeight-200)+'px';
 });
@@ -1603,6 +1715,198 @@ function doHover(){
     }
   }
 }
+
+/* ============================== 点击 Zoom in · 视口树形历史 ============================== */
+// 每次导航都往树里记一笔：root（本步起始视角）为根，Zoom in 一个节点 = 挂一个子节点。
+// 返回 = 回到父节点；点历史树任意节点 = 跳过去（从别处再 Zoom 会长出新分支，历史永不丢失）。
+// V / ⛶ 打开「全景」总览整棵树、点击任意视口快速跳转；
+// 视口数超过 VP_MAX 触发垃圾回收：回收最久未访问的旁支叶子，根与当前路径永不回收。
+const FAST_DUR=0.12;               // 动效在 120ms 内完成，快而爽快
+const VP_MAX=30;                   // 视口总数上限，超过即触发 GC
+const pickV=new THREE.Vector2();
+let vpRoot=null, vpCurrent=null, vpSeq=0, vpGCCount=0;
+
+function makeVP(pos,target,label,meta){
+  return {id:++vpSeq, pos:pos.clone(), target:target.clone(), label, meta:meta||{},
+    parent:null, children:[], at:performance.now()}; // at = 最近访问时间（GC 的 LRU 依据）
+}
+function vpDepth(){ let d=0,n=vpCurrent; while(n&&n.parent){d++;n=n.parent;} return d; }
+function vpCount(n){ let c=1; for(const k of n.children)c+=vpCount(k); return c; }
+// 离开当前视口前，把「此刻真实相机位姿」存回去——返回时能精确回到你刚才所在处（含手动旋转/缩放）
+function vpSnapshot(){ if(vpCurrent){ vpCurrent.pos.copy(camera.position); vpCurrent.target.copy(controls.target); } }
+
+function vpReset(pos,target,label){        // 切换步骤时重置为一棵新树（根 = 本步起始视角）
+  vpSeq=0; vpGCCount=0;
+  vpRoot=makeVP(pos,target,label||'起始视角',{kind:'stage'});
+  vpCurrent=vpRoot;
+  closeVpMap();
+  renderVPTree();
+}
+function vpNavigate(node){                  // 跳到历史树中已存在的某个视口
+  if(!node||node===vpCurrent)return;
+  vpSnapshot();
+  vpCurrent=node;
+  node.at=performance.now();
+  flyCamera(node.pos.clone(),node.target.clone(),FAST_DUR,easeOut);
+  renderVPTree();
+}
+function vpBack(){ if(vpCurrent&&vpCurrent.parent)vpNavigate(vpCurrent.parent); }
+
+// 垃圾回收：超过上限时，反复摘掉「最久未访问的旁支叶子」直到达标。
+// 根与当前路径（current 及其全部祖先）永不回收；若全树都在当前路径上（超深链），允许暂时超限。
+function vpGC(){
+  let total=vpCount(vpRoot);
+  if(total<=VP_MAX)return;
+  const keep=new Set();
+  for(let n=vpCurrent;n;n=n.parent)keep.add(n);
+  while(total>VP_MAX){
+    let victim=null;
+    (function walk(n){
+      if(!n.children.length){ if(!keep.has(n)&&(!victim||n.at<victim.at))victim=n; return; }
+      n.children.forEach(walk);
+    })(vpRoot);
+    if(!victim)break;
+    victim.parent.children.splice(victim.parent.children.indexOf(victim),1);
+    victim.parent=null;
+    vpGCCount++; total--;
+  }
+}
+
+function zoomToNode(mesh){
+  const node=mesh.userData.node; if(!node)return;
+  if(vpCurrent&&vpCurrent.meta&&vpCurrent.meta.node===node)return; // 已聚焦该节点
+  scene.updateMatrixWorld(true);
+  const wp=mesh.getWorldPosition(new THREE.Vector3());
+  const r=(mesh.geometry.parameters&&mesh.geometry.parameters.radius)||0.6;
+  const dist=12+r*7;                        // 框住节点 + 它的直接邻域（子节点 / 交织 / 引力）
+  let dir=camera.position.clone().sub(controls.target);
+  if(dir.lengthSq()<1e-4)dir.set(0,.5,1);
+  dir.normalize();
+  if(dir.y<.12){dir.y=.12;dir.normalize();} // 略抬高视角，避免正贴地/正俯视
+  const pos=wp.clone().add(dir.multiplyScalar(dist));
+  vpSnapshot();                             // 先把出发点位姿存进父节点
+  const child=makeVP(pos,wp,node.name,{kind:'node',gid:node.gid,node});
+  child.parent=vpCurrent; vpCurrent.children.push(child); vpCurrent=child;
+  vpGC();                                   // 树长大了：超限则回收最久未访问的旁支
+  flyCamera(pos.clone(),wp.clone(),FAST_DUR,easeOut);
+  renderVPTree();
+}
+
+// 命中拾取：只认「看得见」的节点（被淡化到 op<.5 的不参与），含可见的平台树节点
+function pickNodeAt(cx,cy){
+  pickV.set((cx/innerWidth)*2-1, -(cy/innerHeight)*2+1);
+  raycaster.setFromCamera(pickV,camera);
+  const meshes=allNodes.filter(n=>n.mat.opacity>.5).map(n=>n.mesh);
+  if(platformGroup.visible)meshes.push(...Object.values(platNodes));
+  const hits=raycaster.intersectObjects(meshes,false);
+  return hits.length?hits[0].object:null;
+}
+
+// 区分「点击」与「拖拽旋转」：位移 < 6px 且 < 500ms 才算点击
+let dnX=0,dnY=0,dnT=0,dnOK=false;
+renderer.domElement.addEventListener('pointerdown',e=>{
+  if(e.button!==0){dnOK=false;return;}
+  dnX=e.clientX; dnY=e.clientY; dnT=performance.now(); dnOK=true;
+});
+renderer.domElement.addEventListener('pointerup',e=>{
+  if(e.button!==0||!dnOK)return; dnOK=false;
+  if(Math.hypot(e.clientX-dnX,e.clientY-dnY)>6||performance.now()-dnT>500)return;
+  const m=pickNodeAt(e.clientX,e.clientY);
+  if(m)zoomToNode(m);
+});
+
+function nodeDetailHTML(n){
+  return n.platform
+    ? `<b>${n.name}</b><span class="tt-kind">平台树 · 横切关注点的显式归属</span>`
+    : nodeTooltip(n);
+}
+function renderVPTree(){
+  const depth=vpDepth();
+  $('vp-back').style.display=depth>0?'inline-flex':'none';
+  const panel=$('vp-panel');
+  const show=!!(vpRoot&&vpRoot.children.length);   // 至少 Zoom in 过一次才出现
+  panel.style.display=show?'block':'none';
+  if(show){
+    const det=$('vp-detail'), m=vpCurrent&&vpCurrent.meta;
+    if(m&&m.kind==='node'&&m.node){ det.innerHTML=nodeDetailHTML(m.node); annotateTerms(det); }
+    else det.innerHTML='<div class="vp-empty">点击任意节点 <b>Zoom in</b> 查看详情</div>';
+    $('vp-sub').textContent='导航树（点击任意节点跳转）'+(vpGCCount?` · 已回收 ${vpGCCount}`:'');
+    const tree=$('vp-tree'); tree.innerHTML='';
+    (function walk(node,d){
+      const row=document.createElement('div');
+      row.className='vp-row'+(node===vpCurrent?' cur':'');
+      row.style.paddingLeft=(7+d*15)+'px';
+      const label=d===0?('⌂ '+node.label):node.label;
+      row.innerHTML=`<span class="vp-dot"></span><span class="vp-name">${label}</span>`;
+      row.title=label;
+      row.onclick=()=>vpNavigate(node);
+      tree.appendChild(row);
+      node.children.forEach(c=>walk(c,d+1));
+    })(vpRoot,0);
+  }
+  syncRotateBtn();   // 聚焦节点时暂停总览自动旋转，回到根再恢复
+}
+
+/* ---- 全景总览：整棵视口历史树一屏铺开，点击任意视口快速跳转 ---- */
+let vpMapOn=false;
+function vpColor(n){ // 视口小圆点用「所属树」的颜色，根/步骤视角用金色
+  const m=n.meta||{};
+  if(m.kind==='node'&&m.node){
+    if(m.node.platform)return '#f3e9c8';
+    if(m.node.tree>=0)return '#'+trees[m.node.tree].def.color.toString(16).padStart(6,'0');
+  }
+  return '#ffd166';
+}
+function renderVpMap(){
+  $('vpm-stats').textContent=
+    `当前深度 ${vpDepth()} · 视口 ${vpCount(vpRoot)} / ${VP_MAX}`+(vpGCCount?` · 已回收 ${vpGCCount}`:'');
+  const path=new Set(); for(let n=vpCurrent;n;n=n.parent)path.add(n);
+  const body=$('vpm-body'); body.innerHTML='';
+  const rootUl=document.createElement('ul'); rootUl.className='vpm-tree';
+  (function walk(node,ul){
+    const li=document.createElement('li');
+    const chip=document.createElement('button');
+    chip.type='button';
+    chip.className='vpm-chip'+(node===vpCurrent?' cur':path.has(node)?' onpath':'');
+    chip.title=node.parent?`跳转到「${node.label}」`:'回到本步起始视角';
+    chip.innerHTML=`<span class="dot" style="background:${vpColor(node)}"></span>`+
+      `<span class="nm">${node.parent?node.label:'⌂ '+node.label}</span>`+
+      `<span class="idx">#${node.id}</span>`+(node===vpCurrent?'<span class="badge">当前</span>':'');
+    chip.onclick=()=>{ closeVpMap(); vpNavigate(node); };
+    li.appendChild(chip);
+    if(node.children.length){
+      const cul=document.createElement('ul');
+      node.children.forEach(c=>walk(c,cul));
+      li.appendChild(cul);
+    }
+    ul.appendChild(li);
+  })(vpRoot,rootUl);
+  body.appendChild(rootUl);
+  if(!vpRoot.children.length){
+    const d=document.createElement('div');
+    d.className='vpm-empty';
+    d.textContent='还没有 Zoom in 记录——点击 3D 图中任意节点，这里会长出历史树。';
+    body.appendChild(d);
+  }
+}
+function openVpMap(){ if(!vpRoot)return; vpMapOn=true; renderVpMap(); $('vp-map').classList.add('open'); }
+function closeVpMap(){ if(!vpMapOn)return; vpMapOn=false; $('vp-map').classList.remove('open'); }
+
+$('vp-back').onclick=vpBack;
+$('vp-home').onclick=()=>vpNavigate(vpRoot);
+$('vp-map-btn').onclick=openVpMap;
+$('vpm-close').onclick=closeVpMap;
+$('vp-map').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeVpMap(); }); // 点背板关闭
+addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ vpMapOn?closeVpMap():vpBack(); }   // 全景开着时 Esc 先关全景，再按才是返回
+  else if((e.key==='v'||e.key==='V')&&!e.metaKey&&!e.ctrlKey&&!e.altKey){ vpMapOn?closeVpMap():openVpMap(); }
+});
+// 调试 / 自动化测试钩子（编程式导航 + 只读统计）
+window.__vp={
+  zoomTo:gid=>{ const n=nodesById.get(gid); if(n)zoomToNode(n.mesh); },
+  back:vpBack, home:()=>vpNavigate(vpRoot), depth:vpDepth,
+  count:()=>vpCount(vpRoot), gc:()=>vpGCCount, gids:()=>[...nodesById.keys()],
+};
 
 /* ============================== 主循环 ============================== */
 const clock=new THREE.Clock();
