@@ -8,7 +8,7 @@ import { TANGLES } from '../data/tangles.js';
 import { state, stratOn, runtime } from '../core/state.js';
 import { tween } from '../core/tween.js';
 import { V3 } from '../core/three-utils.js';
-import { nodesById } from '../core/registry.js';
+import { nodesById, nodeWorld } from '../core/registry.js';
 import { controls, flyCamera, wake } from '../scene/context.js';
 import { refreshTangleFlags, rebuildTangles, setOnTanglesRebuilt } from '../scene/tangles.js';
 import { refreshNodes } from '../scene/appearance.js';
@@ -36,7 +36,8 @@ export function applyState() {
   const platVis = stratOn('platform');
   if (platVis && !platformWasVisible) {
     platformGroup.visible = true; platformGroup.scale.setScalar(.01);
-    tween(.9, k => platformGroup.scale.setScalar(.01 + .99 * k));
+    // 弹出动画期间平台节点在移动:置 linkDirty 让金色纠缠线逐帧跟随(重建已是就地写缓冲,开销可忽略)
+    tween(.9, k => { platformGroup.scale.setScalar(.01 + .99 * k); runtime.linkDirty = true; });
   }
   platformGroup.visible = platVis;
   platformWasVisible = platVis;
@@ -76,7 +77,7 @@ export function setStage(n) {
   setMeterVisible(n !== 9); // 树之树看的是生长顺序,不看熵
   syncRotate();
 
-  // 树之树:进入即重新生长;离开即拆除(含 CSS2D 标签)
+  // 树之树:进入即重新生长;离开即拆除(含 2D 标签)
   if (n === 9) { metaGroup.visible = true; buildMetaTree(); }
   else if (metaGroup.visible) { metaGroup.visible = false; clearMeta(); }
 
@@ -90,7 +91,7 @@ export function setStage(n) {
   let camPos, camTgt;
   if (n === 6) {
     applyState(); buildCollapse();
-    const fp = nodesById.get(FOCUS_ID).mesh.getWorldPosition(new THREE.Vector3());
+    const fp = nodeWorld(nodesById.get(FOCUS_ID), new THREE.Vector3());
     camPos = fp.clone().add(V3(15, 11, 26)); camTgt = fp.clone().add(V3(-2, 4, 0));
     flyCamera(camPos, camTgt, 1.8);
   } else {

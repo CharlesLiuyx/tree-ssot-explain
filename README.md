@@ -50,7 +50,7 @@ npm run build  # 即 node build-embedded.mjs，产出 index-embedded.html
 ```
 
 依赖清单（`vendor/`，three.js r160，来源 cdn.jsdelivr.net）：
-`three.module.js`、`controls/OrbitControls.js`、`renderers/CSS2DRenderer.js`。
+`three.module.js`、`controls/OrbitControls.js`。
 
 ## 代码结构
 
@@ -66,8 +66,9 @@ src/
   data/               【纯数据】树定义 / 交织 / 引力对 / 幽灵根 / 平台服务 / 策略 / 演化路径
   story/              【纯文案】十步叙事（含机位）/ ~110 条名词解释
   core/               【基础设施】state+runtime（跨系统状态 SSOT）/ 补间 / three 工具 / 场景登记表
-  scene/              【3D 系统】context（渲染器/相机/帧率调度）/ trees / tangles / gravity /
-                      ghosts / platform / strategies-fx / collapse / meta-tree / appearance
+  scene/              【3D 系统】context（渲染器/相机/帧率调度）/ pools（节点与装饰的实例化池）/
+                      labels（轻量 2D 标签）/ trees / tangles / gravity / ghosts / platform /
+                      strategies-fx / collapse / meta-tree / appearance
   ui/                 【UI 组件】每个组件自带 DOM 模板与渲染：panel / dots / entropy-meter /
                       legend / topbar / rotate-toggle / tooltip / node-info / terms / viewport-*
   app/                【编排】director（setStage 总调度）/ viewport-history / hover / keymap / loop
@@ -123,11 +124,29 @@ src/
 
 ## 技术
 
-three.js r160（importmap → 本地 `vendor/`）+ OrbitControls + CSS2DRenderer，
+three.js r160（importmap → 本地 `vendor/`）+ OrbitControls + 自研轻量 2D 标签渲染器，
 源码版无构建步骤（原生 ES Module，入口 `src/main.js`）；
 `build-embedded.mjs` 用 esbuild（resolve 插件把 `three` 裸导入指到 `vendor/`）
 把全部 CSS/JS 内联为单文件 `index-embedded.html`。
-引力形变通过每帧更新节点位置与单位圆柱枝干实现；幽灵根的虚线 / 收编动画逐帧重建线段几何；
+
+**渲染架构（为全程不卡顿而设计）**：
+
+- **实例化池**（`scene/pools.js`）：241 个节点球 + 描边 / 护壳 / 光环 / 脉冲点 / 根环
+  各自合并为一个 InstancedMesh——整帧 draw call 从 ~700-1000 降到 ~60-160；
+  节点的颜色 / 自发光 / 透明度走 per-instance 属性（着色器补丁），静态枝干烘焙为每树一个合并网格。
+- **纠缠管道池**（`scene/tangles.js`）：59 条纠缠线的管状几何预分配在两个大缓冲里，
+  策略切换 / 树迁移时就地重写顶点 + drawRange（不再逐帧 new/dispose TubeGeometry），
+  迁移动画期间每帧重建成本从 ~10ms 级降到 ~0.3ms 级,且零 GC 压力。
+- **轻量标签**（`scene/labels.js`）：标签登记表直投屏幕坐标,替代 CSS2DRenderer
+  的每帧双次全场景递归遍历;transform / display / zIndex 带缓存,不变不写 DOM。
+- **解析拾取**：悬停与点击用「射线×球 / 射线×线段」解析求交,不再对数百个网格做三角形遍历。
+- **帧率调度**：空闲即停渲染(CPU 归零)、环境 60fps、交互放开到刷新率(封 120)；
+  机器跟不上时自适应降档(像素比 1.5→1.25→1.0,最后环境帧率退 30),只降不升。
+- **CSS 合成层**:面板不用 backdrop-filter(WebGL 画布上的毛玻璃每帧都要重新模糊),
+  STEP 6 危险光晕用固定 box-shadow × opacity 动画(纯合成器,零重绘)。
+
+引力形变通过每帧更新节点位置与单位圆柱枝干实现（静止时精确归位、零开销）；
+幽灵根的虚线 / 收编动画就地写预分配的线段缓冲；
 树之树把每棵树坍缩为元节点，按所选演化路径的拓扑序逐个点亮（枝先长、球后冒），
 虚线垂向森林中该树的真身，两条路径可随时切换重播；
 右上角「语义熵」仪表由交织状态、引力状态、幽灵根状态与策略开关实时计算。

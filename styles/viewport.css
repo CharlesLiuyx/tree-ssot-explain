@@ -1,6 +1,6 @@
 /* 点击 Zoom in · 视口树形历史:返回按钮 / 胶囊 / 历史面板 / 节点详情 / 全景 overlay */
 #vp-back{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:12;display:none;align-items:center;gap:7px;
-  cursor:pointer;background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  cursor:pointer;background:var(--card);
   border:1px solid rgba(255,209,102,.5);border-radius:99px;padding:7px 15px;color:var(--gold);
   font-family:inherit;font-size:12.5px;font-weight:600;letter-spacing:.02em;
   box-shadow:0 12px 40px rgba(0,0,0,.45);transition:filter .15s,transform .08s}
@@ -8,7 +8,7 @@
 #vp-back:active{transform:translateX(-50%) scale(.95)}
 
 #vp-pill{position:fixed;right:18px;top:188px;z-index:10;display:none;align-items:center;gap:7px;
-  cursor:pointer;background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  cursor:pointer;background:var(--card);
   border:1px solid var(--line);border-radius:99px;padding:8px 14px;color:var(--txt);
   font-family:inherit;font-size:12.5px;font-weight:600;box-shadow:0 12px 40px rgba(0,0,0,.45);transition:border-color .2s}
 #vp-pill:hover{border-color:rgba(255,209,102,.5)}
@@ -16,7 +16,7 @@
 
 #vp-panel{position:fixed;right:18px;top:188px;z-index:10;width:252px;display:none;
   max-height:calc(100vh - 372px);overflow-y:auto;
-  background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  background:var(--card);
   border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 12px 40px rgba(0,0,0,.45)}
 #vp-panel::-webkit-scrollbar{width:6px}
 #vp-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:3px}
@@ -52,7 +52,7 @@
 
 /* ===== 视口历史 · 全景总览(V 键 / ⛶ 按钮)===== */
 #vp-map{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;
-  background:rgba(4,6,11,.66);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+  background:rgba(4,6,11,.85)} /* 无毛玻璃(省每帧全屏模糊),用更深的遮罩保持模态分离感 */
 #vp-map.open{display:flex}
 #vp-map .vpm-card{width:min(780px,92vw);max-height:80vh;display:flex;flex-direction:column;
   background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.6);overflow:hidden}

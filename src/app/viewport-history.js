@@ -5,10 +5,11 @@
 
 import * as THREE from 'three';
 import { FAST_DUR, VP_MAX } from '../config.js';
-import { nodesById, allNodes } from '../core/registry.js';
+import { nodesById, allNodes, nodeWorld } from '../core/registry.js';
 import { easeOut } from '../core/tween.js';
-import { renderer, scene, camera, controls, flyCamera } from '../scene/context.js';
-import { platformGroup, platNodes } from '../scene/platform.js';
+import { raySphereT } from '../core/three-utils.js';
+import { renderer, camera, controls, flyCamera } from '../scene/context.js';
+import { platformGroup, platNodes, platWorld } from '../scene/platform.js';
 import { initVpPanel, renderVpPanel } from '../ui/viewport-panel.js';
 import { initVpMap, renderVpMap, setVpMapOpen } from '../ui/viewport-map.js';
 
@@ -81,13 +82,16 @@ function vpClear() {
   if (vpMapOn) renderVpMap(vm());
 }
 
-function zoomToNode(mesh) {
-  const node = mesh.userData.node; if (!node) return;
+const _wp = new THREE.Vector3();
+function nodeWorldPos(node, out) {
+  return node.platform ? platWorld(node.mesh, out) : nodeWorld(node, out);
+}
+
+function zoomToNode(node) {
+  if (!node) return;
   if (vpCurrent && vpCurrent.meta && vpCurrent.meta.node === node) return; // 已聚焦该节点
-  scene.updateMatrixWorld(true);
-  const wp = mesh.getWorldPosition(new THREE.Vector3());
-  const r = (mesh.geometry.parameters && mesh.geometry.parameters.radius) || 0.6;
-  const dist = 12 + r * 7;                     // 框住节点 + 它的直接邻域(子节点 / 交织 / 引力)
+  const wp = nodeWorldPos(node, new THREE.Vector3());
+  const dist = 12 + node.radius * 7;             // 框住节点 + 它的直接邻域(子节点 / 交织 / 引力)
   let dir = camera.position.clone().sub(controls.target);
   if (dir.lengthSq() < 1e-4) dir.set(0, .5, 1);
   dir.normalize();
@@ -101,16 +105,21 @@ function zoomToNode(mesh) {
   render();
 }
 
-// 命中拾取:只认「看得见」的节点(被淡化到 op<.5 的不参与),含可见的平台树节点
+// 命中拾取:只认「看得见」的节点(被淡化到 op<.5 的不参与),含可见的平台树节点。解析球求交,无三角形遍历。
 const pickRay = new THREE.Raycaster();
 const pickV = new THREE.Vector2();
 function pickNodeAt(cx, cy) {
   pickV.set((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1);
   pickRay.setFromCamera(pickV, camera);
-  const meshes = allNodes.filter(n => n.mat.opacity > .5).map(n => n.mesh);
-  if (platformGroup.visible) meshes.push(...Object.values(platNodes));
-  const hits = pickRay.intersectObjects(meshes, false);
-  return hits.length ? hits[0].object : null;
+  let best = null, bt = Infinity;
+  const test = (node, r) => {
+    const t = raySphereT(pickRay.ray, _wp, r);
+    if (t >= 0 && t < bt) { bt = t; best = node; }
+  };
+  for (const n of allNodes) if (n.opacity > .5) { nodeWorld(n, _wp); test(n, n.radius); }
+  if (platformGroup.visible)
+    for (const m of Object.values(platNodes)) { platWorld(m, _wp); test(m.userData.node, m.userData.node.radius); }
+  return best;
 }
 
 /* ---- 全景总览:整棵视口历史树一屏铺开,点击任意视口快速跳转 ---- */
@@ -144,13 +153,13 @@ export function initViewportHistory(opts) {
   renderer.domElement.addEventListener('pointerup', e => {
     if (e.button !== 0 || !dnOK) return; dnOK = false;
     if (Math.hypot(e.clientX - dnX, e.clientY - dnY) > 6 || performance.now() - dnT > 500) return;
-    const m = pickNodeAt(e.clientX, e.clientY);
-    if (m) zoomToNode(m);
+    const n = pickNodeAt(e.clientX, e.clientY);
+    if (n) zoomToNode(n);
   });
 
   // 调试 / 自动化测试钩子(编程式导航 + 只读统计)
   window.__vp = {
-    zoomTo: gid => { const n = nodesById.get(gid); if (n) zoomToNode(n.mesh); },
+    zoomTo: gid => { const n = nodesById.get(gid); if (n) zoomToNode(n); },
     back: vpBack, home: () => vpNavigate(vpRoot), clear: vpClear, depth: vpDepth,
     count: () => vpCount(vpRoot), gc: () => vpGCCount, gids: () => [...nodesById.keys()],
   };

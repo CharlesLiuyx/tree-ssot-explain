@@ -15,11 +15,13 @@ import './ui/viewport-panel.js';
 import './ui/viewport-map.js';
 import './ui/tooltip.js';
 
-import { buildTrees, mergeStaticBranches } from './scene/trees.js';
-import { registerTangles } from './scene/tangles.js';
+import { renderer, scene, camera } from './scene/context.js';
+import { buildTrees, buildBranches } from './scene/trees.js';
+import { registerTangles, buildTanglePool } from './scene/tangles.js';
 import { registerGravity } from './scene/gravity.js';
 import { buildGhosts } from './scene/ghosts.js';
 import { buildPlatform } from './scene/platform.js';
+import { buildPools } from './scene/pools.js';
 import { initDirector, setStage, syncRotate } from './app/director.js';
 import { initViewportHistory } from './app/viewport-history.js';
 import { initHover } from './app/hover.js';
@@ -29,13 +31,16 @@ import { annotateTerms } from './ui/terms.js';
 import { legendEl } from './ui/legend.js';
 import { meterEl } from './ui/entropy-meter.js';
 
-/* 1. 场景:建树 → 登记交织(长光环) → 登记引力 → 合并静态枝干(依赖引力标记) → 幽灵根 → 平台树 */
+/* 1. 场景:建树 → 登记交织(长光环) → 登记引力 → 枝干烘焙(依赖引力标记) → 幽灵根 → 平台树
+      → 实例化池构建(节点/描边/护壳/光环/发光点)与纠缠管道池预分配 */
 buildTrees();
 registerTangles();
 registerGravity();
-mergeStaticBranches();
+buildBranches();
 buildGhosts();
 buildPlatform();
+buildPools();
+buildTanglePool();
 
 /* 2. 行为装配:导演接管 UI 回调,视口历史接管点击导航,悬停与快捷键上线 */
 initDirector();
@@ -43,8 +48,9 @@ initViewportHistory({ afterRender: syncRotate }); // 聚焦节点时暂停总览
 initHover();
 initKeymap();
 
-/* 3. 启动 */
+/* 3. 启动:预编译全部着色器(把编译毛刺挡在首帧之前),再进主循环 */
 setStage(0);
+renderer.compile(scene, camera);
 annotateTerms(legendEl);
 annotateTerms(meterEl);
 startLoop();
