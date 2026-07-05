@@ -98,6 +98,15 @@
     border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:11.5px;color:var(--sub);line-height:1.9}
   #legend .sw{display:inline-block;width:9px;height:9px;border-radius:99px;margin-right:6px;vertical-align:baseline}
 
+  #rotate-toggle{position:fixed;left:18px;bottom:16px;z-index:10;display:none;align-items:center;gap:7px;
+    cursor:pointer;background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--line);border-radius:99px;padding:8px 15px;color:var(--txt);
+    font-family:inherit;font-size:12.5px;font-weight:600;letter-spacing:.02em;
+    box-shadow:0 12px 40px rgba(0,0,0,.45);transition:border-color .2s,color .2s}
+  #rotate-toggle:hover{border-color:rgba(255,209,102,.5)}
+  #rotate-toggle .rt-ico{font-size:12px;line-height:1}
+  #rotate-toggle.paused{color:var(--gold);border-color:rgba(255,209,102,.5)}
+
   #tooltip{position:fixed;z-index:20;pointer-events:none;display:none;max-width:330px;
     background:rgba(10,13,20,.94);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:10px 12px;
     font-size:12.5px;line-height:1.65;box-shadow:0 10px 30px rgba(0,0,0,.5)}
@@ -178,6 +187,10 @@
 </div>
 
 <div id="dots"></div>
+
+<button id="rotate-toggle" type="button" title="暂停 / 恢复总览的自动旋转（也可直接拖动画面）">
+  <span class="rt-ico"></span><span class="rt-txt"></span>
+</button>
 
 <div id="tooltip"></div>
 
@@ -1403,6 +1416,18 @@ function cancelTimers(){
   highlightTangle=-1;
 }
 
+// 自动旋转 = 用户意图 × 当前步骤（仅总览自动旋转；用户可随时暂停/恢复，意图跨步骤保留）
+let autoRotateWanted=true;
+function syncRotateBtn(){
+  controls.autoRotate=autoRotateWanted&&state.stage===0;
+  const b=$('rotate-toggle');
+  if(!b)return;
+  b.style.display=state.stage===0?'inline-flex':'none'; // 仅总览会自动旋转，其余步骤按钮无意义
+  b.classList.toggle('paused',!autoRotateWanted);
+  b.querySelector('.rt-ico').textContent=autoRotateWanted?'⏸':'⟳';
+  b.querySelector('.rt-txt').textContent=autoRotateWanted?'停止旋转':'自动旋转';
+}
+
 function setStage(n){
   cancelTimers();
   state.stage=n;
@@ -1413,7 +1438,7 @@ function setStage(n){
   state.revealed=n===3?0:TANGLES.length;
   renderPanel(); renderDots(); renderStrats();
   $('vignette').classList.toggle('danger',n===6);
-  controls.autoRotate=(n===0);
+  syncRotateBtn();
 
   // 引力强度随阶段推进（总览预告 + 引力阶段之后常驻）
   const gTarget=(n===0||n>=4)?1:0;
@@ -1456,6 +1481,7 @@ function setStage(n){
 
 $('next').onclick=()=>setStage((state.stage+1)%STAGES.length);
 $('prev').onclick=()=>setStage(Math.max(0,state.stage-1));
+$('rotate-toggle').onclick=()=>{autoRotateWanted=!autoRotateWanted;syncRotateBtn();};
 addEventListener('keydown',e=>{
   if(e.key==='ArrowRight')setStage((state.stage+1)%STAGES.length);
   if(e.key==='ArrowLeft')setStage(Math.max(0,state.stage-1));
@@ -1471,7 +1497,7 @@ let overUI=false;
 addEventListener('pointermove',e=>{
   pointer.x=(e.clientX/innerWidth)*2-1;
   pointer.y=-(e.clientY/innerHeight)*2+1;
-  overUI=!!(e.target&&e.target.closest&&e.target.closest('#panel,#topbar,#meter,#legend,#dots'));
+  overUI=!!(e.target&&e.target.closest&&e.target.closest('#panel,#topbar,#meter,#legend,#dots,#rotate-toggle'));
   tooltip.style.left=Math.min(e.clientX+16,innerWidth-350)+'px';
   tooltip.style.top=Math.min(e.clientY+16,innerHeight-200)+'px';
 });
