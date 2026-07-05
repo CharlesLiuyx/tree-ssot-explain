@@ -135,6 +135,9 @@
   .glabel{pointer-events:none;text-align:center;color:var(--ghost);text-shadow:0 2px 8px rgba(0,0,0,.9);font-size:12px;font-weight:600}
   .glabel b{display:block;font-size:12.5px}
   .glabel span{display:block;font-size:10px;color:var(--sub);font-weight:400}
+  .mlabel{pointer-events:none;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.9);font-size:12.5px;font-weight:700;white-space:nowrap}
+  .mlabel .seq{display:inline-block;min-width:17px;padding:0 4px;border-radius:99px;background:rgba(255,209,102,.92);color:#1a1408;font-size:10.5px;margin-right:4px;font-weight:800}
+  .mlabel .mroot{display:block;font-size:10px;color:var(--gold);font-weight:600;letter-spacing:.08em;margin-top:1px}
 
   /* ===== 点击 Zoom in · 视口树形历史 · 节点详情 ===== */
   #vp-back{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:12;display:none;align-items:center;gap:7px;
@@ -265,7 +268,7 @@
 
 <div id="legend">
   <span class="sw" style="background:#ffd166"></span>根 / SSOT —— 由人守护<br>
-  <span class="sw" style="background:#d9e650"></span><span class="sw" style="background:#ff7fb2;margin-left:-3px"></span>业务树（深）　<span class="sw" style="background:#5b8cff"></span>横切树（拉通）<br>
+  <span class="sw" style="background:#d9e650"></span><span class="sw" style="background:#ff7fb2;margin-left:-3px"></span>业务树 ×2（深）　<span class="sw" style="background:#5b8cff"></span><span class="sw" style="background:#7ee08a;margin-left:-3px"></span><span class="sw" style="background:#dcc98a;margin-left:-3px"></span>横切树 ×14（拉通）<br>
   <span class="sw" style="background:#ff4d6d"></span>偶然交织（可消解）　<span class="sw" style="background:#ff2fd0"></span>本征引力（只能共域）<br>
   <span class="sw" style="background:#7de8ff"></span>幽灵根 —— 真相在图外（只能显式化收编）<br>
   <span class="sw" style="background:transparent;border:1.5px dashed #7de8ff"></span>仓库边界（可嵌套）—— 每棵树可自成仓库 / 子仓库<br>
@@ -346,9 +349,11 @@ const GOLD=0xffd166, RED=0xff4d6d, GREEN=0x5dd39e, AMBER=0xffb84d, PLAT=0xf3e9c8
 const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
 
 // 两棵业务树（以 Blender / VS Code 这类复杂交互工具为原型，更深、更茂密）
-// + 四棵横切树（架构 / 性能 / 权限 / 门控）
+// + 十四棵横切树：经典四棵（架构 / 性能 / 权限 / 门控）
+//   + 运行时三棵（可观测 / 并发 / 容错）+ 承诺三棵（兼容 / 安全 / 隐私）
+//   + 产品与商业四棵（i18n / 协同 / 计费 / 多租户）
 const TREE_DEFS=[
-  {id:'edit', name:'编辑核心树（业务）', color:0xd9e650, pos:[-15,0,9], layerX:12.5, kind:'biz',
+  {id:'edit', name:'编辑核心树（业务）', short:'编辑核心', color:0xd9e650, pos:[-15,0,9], layerX:-62.5, layerZ:14, kind:'biz',
    constraint:'视角：数据模型与一致性', tradeoff:'域复杂度：Blender 的场景图/依赖图，VS Code 的文本模型——消不掉，也不该消', rootName:'编辑核心 SSOT',
    l1:[
      {id:'docmodel', n:'场景 / 文档模型', c:[
@@ -407,7 +412,7 @@ const TREE_DEFS=[
        {id:'constraints', n:'约束求解', c:[{id:'solveorder',n:'求解顺序'}]},
      ]},
    ]},
-  {id:'ui', name:'交互界面树（业务）', color:0xff7fb2, pos:[15,0,9], layerX:-62.5, kind:'biz',
+  {id:'ui', name:'交互界面树（业务）', short:'交互界面', color:0xff7fb2, pos:[15,0,9], layerX:-87.5, layerZ:14, kind:'biz',
    constraint:'视角：交互范式与状态', tradeoff:'域复杂度：视口 / Gizmo / 命令面板 / 扩展宿主——工具的「手感」全在这里', rootName:'交互 SSOT',
    l1:[
      {id:'feedback', n:'反馈与通知', c:[
@@ -464,33 +469,107 @@ const TREE_DEFS=[
        {id:'menus', n:'菜单与工具条', c:[{id:'ctxmenu',n:'上下文菜单'}]},
      ]},
    ]},
-  {id:'arch', name:'架构树', color:0x5b8cff, pos:[-38,0,-6], layerX:37.5, kind:'cross',
+  // —— 经典四棵（内环）——
+  {id:'arch', name:'架构树', short:'架构', color:0x5b8cff, pos:[48,0,-2], layerX:12.5, layerZ:14, kind:'cross',
    constraint:'约束：可扩展性', tradeoff:'代价：抽象加层 → 短期性能受损', rootName:'架构 SSOT',
    l1:[
      {id:'layers', n:'领域分层', c:[{id:'di',n:'依赖注入'},{id:'bus',n:'事件总线'}]},
      {id:'split',  n:'服务拆分', c:[{id:'gw',n:'API 网关'},{id:'cfg',n:'配置中心'}]},
      {id:'plugin', n:'插件机制', c:[{id:'ext',n:'扩展点注册'},{id:'lc',n:'生命周期'}]},
    ]},
-  {id:'perf', name:'性能树', color:0xff9e4d, pos:[38,0,-6], layerX:-12.5, kind:'cross',
+  {id:'perf', name:'性能树', short:'性能', color:0xff9e4d, pos:[-48,0,-2], layerX:-37.5, layerZ:-14, kind:'cross',
    constraint:'约束：吞吐与延迟', tradeoff:'代价：特化 / 扁平 / 缓存耦合 → 可扩展性受损', rootName:'性能 SSOT',
    l1:[
      {id:'cachesys', n:'缓存体系', c:[{id:'cache',n:'缓存策略'},{id:'invalidate',n:'失效联动'}]},
      {id:'datapath', n:'数据通路', c:[{id:'batch',n:'批量写入'},{id:'pool',n:'连接池'}]},
      {id:'compute',  n:'计算策略', c:[{id:'precompute',n:'预计算'},{id:'lazy',n:'懒加载'}]},
    ]},
-  {id:'authz', name:'权限树', color:0xb28dff, pos:[-16,0,-24], layerX:62.5, kind:'cross',
+  {id:'authz', name:'权限树', short:'权限', color:0xb28dff, pos:[42,0,-29], layerX:37.5, layerZ:-14, kind:'cross',
    constraint:'约束：安全与合规', tradeoff:'风险：不建通用模型 → ad-hoc 补丁堆积，复杂度无法消解', rootName:'权限 SSOT',
    l1:[
      {id:'rbac',  n:'RBAC 模型', c:[{id:'roleinherit',n:'角色继承'},{id:'apiauth',n:'API 鉴权'}]},
      {id:'acl',   n:'资源 ACL', c:[{id:'rowacl',n:'行级权限'},{id:'mask',n:'字段脱敏'}]},
      {id:'audit', n:'审计',     c:[{id:'auditlog',n:'审计日志'},{id:'replay2',n:'操作回放'}]},
    ]},
-  {id:'gate', name:'门控树', color:0x3ad6c5, pos:[16,0,-24], layerX:-37.5, kind:'cross',
+  {id:'gate', name:'门控树', short:'门控', color:0x3ad6c5, pos:[-42,0,-29], layerX:62.5, layerZ:14, kind:'cross',
    constraint:'约束：发布安全与实验', tradeoff:'代价：每个 Flag 都是一个分叉宇宙', rootName:'门控 SSOT',
    l1:[
      {id:'flag',    n:'Feature Flag', c:[{id:'flagcfg',n:'开关配置'},{id:'vergate',n:'版本门槛'}]},
      {id:'release', n:'发布策略',     c:[{id:'canary',n:'灰度发布'},{id:'envisol',n:'环境隔离'}]},
      {id:'exp',     n:'实验',         c:[{id:'abtest',n:'A/B 实验'},{id:'metrics',n:'指标埋点'}]},
+   ]},
+  // —— 运行时三棵：可观测 / 并发 / 容错 ——
+  {id:'obs', name:'可观测树', short:'可观测', color:0x7ee08a, pos:[-16,0,-42], layerX:-12.5, layerZ:-14, kind:'cross',
+   constraint:'约束：可诊断性', tradeoff:'代价：埋点与追踪自己就吃性能；日志越全，隐私越险', rootName:'可观测 SSOT',
+   l1:[
+     {id:'logs',  n:'日志体系',  c:[{id:'structlog',n:'结构化日志'},{id:'logsample',n:'日志采样'}]},
+     {id:'trace', n:'链路追踪',  c:[{id:'traceprop',n:'上下文透传'},{id:'spanmap',n:'调用图还原'}]},
+     {id:'slo',   n:'指标与告警', c:[{id:'metricstd',n:'指标口径'},{id:'alertrule',n:'告警规则'}]},
+   ]},
+  {id:'conc', name:'并发树', short:'并发', color:0xd9a05f, pos:[16,0,-42], layerX:-37.5, layerZ:14, kind:'cross',
+   constraint:'约束：时序与一致性', tradeoff:'代价：并行要快、一致要慢——每个功能都要回答「哪段跑在哪个线程」', rootName:'并发 SSOT',
+   l1:[
+     {id:'threading', n:'线程模型', c:[{id:'mainthread',n:'主线程契约'},{id:'workerpool',n:'工作线程池'}]},
+     {id:'syncprim',  n:'同步原语', c:[{id:'lockorder',n:'锁序约定'},{id:'atomics',n:'无锁结构'}]},
+     {id:'asynctask', n:'异步任务', c:[{id:'cancel',n:'取消传播'},{id:'backpressure',n:'背压控制'}]},
+   ]},
+  {id:'fault', name:'容错树', short:'容错', color:0xff795c, pos:[-76,0,-25], layerX:-12.5, layerZ:14, kind:'cross',
+   constraint:'约束：失败语义', tradeoff:'代价：每条路径都要回答「失败了怎么办」——重试与幂等互相绑架', rootName:'容错 SSOT',
+   l1:[
+     {id:'errmodel', n:'错误语义',   c:[{id:'errclass',n:'可恢复性分类'},{id:'partialfail',n:'部分失败'}]},
+     {id:'retry',    n:'重试与退避', c:[{id:'idempotent',n:'幂等键'},{id:'backoff',n:'退避预算'}]},
+     {id:'degrade',  n:'降级与熔断', c:[{id:'circuit',n:'断路器'},{id:'fallback',n:'兜底路径'}]},
+   ]},
+  // —— 承诺三棵：兼容 / 安全 / 隐私 ——
+  {id:'compat', name:'兼容树', short:'兼容', color:0x6f6fe8, pos:[-56,0,-52], layerX:12.5, layerZ:-14, kind:'cross',
+   constraint:'约束：不许破坏承诺', tradeoff:'代价：任何数据与 API 的改动都要过它——否决权比性能树还大', rootName:'兼容 SSOT',
+   l1:[
+     {id:'apicontract', n:'API 契约', c:[{id:'semver',n:'语义化版本'},{id:'depwindow',n:'弃用窗口'}]},
+     {id:'dataevo',     n:'数据演进', c:[{id:'schemamig',n:'Schema 迁移'},{id:'dualread',n:'双读双写'}]},
+     {id:'protocol',    n:'协议协商', c:[{id:'verneg',n:'版本协商'},{id:'capdetect',n:'能力探测'}]},
+   ]},
+  {id:'sec', name:'安全树', short:'安全', color:0x54a8d9, pos:[76,0,-25], layerX:37.5, layerZ:14, kind:'cross',
+   constraint:'约束：攻击面最小化', tradeoff:'代价：权限管「谁能做什么」，安全管「所有人都不许的事」——每层校验都是新摩擦', rootName:'安全 SSOT',
+   l1:[
+     {id:'inputline',  n:'输入防线',   c:[{id:'validate',n:'校验与净化'},{id:'parsefuzz',n:'解析器加固'}]},
+     {id:'secretmgmt', n:'密钥与信任', c:[{id:'keymgmt',n:'密钥轮换'},{id:'signing',n:'签名校验'}]},
+     {id:'supply',     n:'供应链',     c:[{id:'depaudit',n:'依赖审计'},{id:'sandboxpol',n:'沙箱策略'}]},
+   ]},
+  {id:'priv', name:'隐私树', short:'隐私', color:0xdcc98a, pos:[-20,0,-68], layerX:87.5, layerZ:-14, kind:'cross',
+   constraint:'约束：数据的存在本身要合规', tradeoff:'代价：权限管「谁能看」，隐私管「能不能存、存多久」——删除要追进每层缓存与备份', rootName:'隐私 SSOT',
+   l1:[
+     {id:'pii',       n:'PII 治理',     c:[{id:'piitag',n:'字段级标注'},{id:'minimize',n:'最小化采集'}]},
+     {id:'datalife',  n:'数据生命周期', c:[{id:'retention',n:'保留期策略'},{id:'forget',n:'被遗忘权'}]},
+     {id:'residency', n:'数据主权',     c:[{id:'region',n:'地域驻留'},{id:'xborder',n:'跨境传输'}]},
+   ]},
+  // —— 产品与商业四棵：i18n / 协同 / 计费 / 多租户 ——
+  {id:'i18n', name:'i18n / 无障碍树', short:'i18n·a11y', color:0xd97bff, pos:[75,0,7], layerX:-87.5, layerZ:-14, kind:'cross',
+   constraint:'约束：每个人都能用', tradeoff:'代价：每个字符串、每个控件、每条键位都被横穿——最浅、也最宽的一棵', rootName:'i18n SSOT',
+   l1:[
+     {id:'textsys',   n:'文案体系', c:[{id:'icu',n:'复数与语序'},{id:'glossary',n:'术语表'}]},
+     {id:'layoutfit', n:'布局适配', c:[{id:'rtl',n:'RTL 镜像'},{id:'textexpand',n:'文本膨胀'}]},
+     {id:'a11y',      n:'无障碍',   c:[{id:'aria',n:'语义标注'},{id:'keynav',n:'键盘可达'}]},
+   ]},
+  {id:'collab', name:'协同树', short:'协同', color:0x9fdf5f, pos:[-75,0,7], layerX:-62.5, layerZ:-14, kind:'cross',
+   constraint:'约束：一切可合并', tradeoff:'代价：数据模型、Undo、权限全部被改写语义——最贵的一棵树', rootName:'协同 SSOT',
+   l1:[
+     {id:'syncengine', n:'同步引擎', c:[{id:'crdt',n:'CRDT 合并'},{id:'oplog',n:'操作日志'}]},
+     {id:'presence',   n:'在场系统', c:[{id:'cursors',n:'多人光标'},{id:'awareness',n:'状态广播'}]},
+     {id:'conflict',   n:'冲突治理', c:[{id:'merge',n:'语义合并'},{id:'offline',n:'离线重放'}]},
+   ]},
+  {id:'bill', name:'计费树', short:'计费', color:0xb0e04d, pos:[20,0,-68], layerX:62.5, layerZ:-14, kind:'cross',
+   constraint:'约束：用量即收入', tradeoff:'代价：权益与 Flag 形影不离、配额反定 API 形状——监控可采样，计费一条不能丢', rootName:'计费 SSOT',
+   l1:[
+     {id:'entitle', n:'权益体系',   c:[{id:'plans',n:'套餐矩阵'},{id:'entitlecheck',n:'权益检查'}]},
+     {id:'quota',   n:'配额与限流', c:[{id:'ratelimit',n:'速率限制'},{id:'quotacount',n:'用量计数'}]},
+     {id:'meter',   n:'计量计费',   c:[{id:'usagemeter',n:'用量上报'},{id:'billevent',n:'计费事件'}]},
+   ]},
+  {id:'tenant', name:'多租户树', short:'多租户', color:0x9a5fd0, pos:[56,0,-52], layerX:87.5, layerZ:14, kind:'cross',
+   constraint:'约束：租户互不可见', tradeoff:'代价：每个缓存键、每张表、每个队列都要多背一个租户维度', rootName:'多租户 SSOT',
+   l1:[
+     {id:'isolation', n:'隔离模型', c:[{id:'dataisol',n:'数据隔离'},{id:'noisy',n:'邻居噪音'}]},
+     {id:'tcfg',      n:'租户配置', c:[{id:'percfg',n:'每租户覆盖'},{id:'tenantflag',n:'租户级开关'}]},
+     {id:'sharding',  n:'分片路由', c:[{id:'shardkey',n:'分片键'},{id:'rebalance',n:'再平衡'}]},
    ]},
 ];
 
@@ -518,6 +597,54 @@ const TANGLES=[
   {a:'edit.migrate', b:'gate.flagcfg', platform:'gate', why:'新数据结构躲在 Feature Flag 后面，版本迁移器被迫先读开关再决定怎么迁——同一个文件在开关两侧迁出两种结果，回滚开关等于批量制造「来自未来」的文件'},
   {a:'ui.layoutpersist', b:'edit.fileio', platform:'infra', why:'布局持久化搭了工程文件的便车：UI 状态被写进文档格式（Blender 的 .blend 正是如此）——从此改一个面板字段都算改文件格式，两棵业务树在磁盘上焊死'},
   {a:'ui.progress', b:'perf.batch', platform:'infra', why:'批量写入为吞吐把任务合并，进度条却需要逐条粒度的完成事件——要么进度撒谎，要么拆批毁吞吐，一根进度条背后是两棵树的拉锯'},
+  // —— 可观测树 ——
+  {a:'obs.logsample', b:'fault.retry', platform:'infra', why:'重试风暴恰好发生在流量最凶的时刻，而采样器此刻丢日志最狠——最需要证据的时候，证据最少'},
+  {a:'obs.traceprop', b:'arch.bus', platform:'infra', why:'追踪上下文要穿过事件总线的异步边界——总线被迫在每个事件里捎带 trace 头，「解耦」的总线耦合上了观测'},
+  {a:'obs.structlog', b:'authz.mask', platform:'audit', why:'日志想看全，脱敏想遮住——同一行日志在两棵树里有两种合法形态，排障与合规各执一份真相'},
+  {a:'obs.metricstd', b:'gate.abtest', platform:'audit', why:'实验指标与告警指标同一个埋点、两种口径——实验说涨了，告警说崩了，没人知道该信谁'},
+  // —— 并发树 ——
+  {a:'conc.cancel', b:'edit.cmdops', platform:'infra', why:'取消到一半的命令要不要进 Undo 栈？取消传播撞上命令化操作，「半个操作」在两棵树里都没有定义'},
+  {a:'conc.lockorder', b:'perf.pool', platform:'infra', why:'连接池有自己的锁，业务有自己的锁——两套锁序约定在高峰期互相等待，死锁只在生产复现'},
+  {a:'conc.workerpool', b:'edit.evalsched', platform:'infra', why:'依赖图的并行求值调度与全局线程池抢核——两棵树都以为自己独占 CPU，卡顿归谁没有答案'},
+  // —— 容错树 ——
+  {a:'fault.idempotent', b:'perf.batch', platform:'infra', why:'批里一条失败：整批重试要求幂等，拆开重试毁掉吞吐——批的边界与幂等键互相绑架'},
+  {a:'fault.circuit', b:'gate.flagcfg', platform:'gate', why:'熔断是开关、灰度也是开关——「功能为什么关了」从此有两个互不知情的事实源'},
+  {a:'fault.errclass', b:'edit.crashrec', platform:'infra', why:'崩溃恢复必须知道哪些错误可恢复——而错误语义的分类表长在另一棵树上，恢复逻辑隔树读表'},
+  {a:'fault.fallback', b:'authz.apiauth', platform:'authz', why:'兜底路径往往是老代码——老代码没接新的鉴权模型，降级的瞬间权限被静默绕过'},
+  // —— 兼容树 ——
+  {a:'compat.dualread', b:'perf.cache', platform:'infra', why:'双读双写期间同一个键存着两种形状的值——缓存必须理解 schema 版本，否则读出「来自过去」的数据'},
+  {a:'compat.semver', b:'ui.apicompat', platform:'infra', why:'插件市场的兼容承诺有两个口径：业务树的弃用周期与兼容树的语义化版本——谁说了算，没有 SSOT'},
+  {a:'compat.schemamig', b:'edit.migrate', platform:'infra', why:'文件版本迁移与 Schema 迁移是两套机制迁同一份数据——执行顺序错一步，迁出损坏文件'},
+  {a:'compat.verneg', b:'collab.syncengine', platform:'infra', why:'协同房间里新旧客户端并存，协议要实时向下协商——兼容从「发布期问题」变成「每一秒的问题」'},
+  // —— i18n / 无障碍树 ——
+  {a:'i18n.textexpand', b:'ui.docking', platform:'infra', why:'德语文案平均比英语长三成——可停靠面板的最小宽度全部重算，每种语言里布局是另一个布局'},
+  {a:'i18n.keynav', b:'ui.keymap', platform:'infra', why:'无障碍要求一切功能键盘可达——快捷键冲突解决从此多背一套「不可占用」清单'},
+  {a:'i18n.icu', b:'gate.abtest', platform:'gate', why:'实验组改了文案，翻译流水线没跟上——灰度用户看到的是回退的源语言，实验数据被语言污染'},
+  {a:'i18n.aria', b:'ui.custompanel', platform:'infra', why:'插件的自定义面板不带语义标注——产品整体的无障碍达标，被第三方生态拉爆'},
+  // —— 安全树 ——
+  {a:'sec.sandboxpol', b:'ui.sandbox', platform:'authz', why:'安全策略与沙箱实现分居两棵树——策略收紧了，实现没跟上，中间的空窗期就是漏洞'},
+  {a:'sec.parsefuzz', b:'edit.fileio', platform:'infra', why:'打开一个文件就是暴露一次解析攻击面——格式兼容越宽容，解析器越难加固'},
+  {a:'sec.keymgmt', b:'arch.cfg', platform:'infra', why:'密钥住在配置中心还是密钥服务？两个 SSOT 抢同一个秘密，轮换时总有一边在用旧钥匙'},
+  {a:'sec.depaudit', b:'compat.semver', platform:'infra', why:'供应链要你为 CVE 升级依赖，兼容承诺不许 break——两棵树在同一次升级上向相反方向拔河'},
+  // —— 协同树 ——
+  {a:'collab.offline', b:'edit.autosave', platform:'infra', why:'离线重放与自动保存都想恢复现场——两套恢复点互相覆盖，「最新状态」有两个答案'},
+  {a:'collab.awareness', b:'perf.pool', platform:'infra', why:'万人房间的在场广播把连接打满——存在感是流量放大器，协同一热闹，性能就跪'},
+  {a:'collab.merge', b:'authz.rowacl', platform:'authz', why:'离线用户合并回来时，他无权看的行也参与了冲突解决——权限过滤与语义合并互相拆台'},
+  // —— 隐私树 ——
+  {a:'priv.forget', b:'perf.cache', platform:'audit', why:'被遗忘权要求删除追进每一层缓存与备份——「删干净」这一个动作，横穿所有存储'},
+  {a:'priv.retention', b:'obs.trace', platform:'audit', why:'追踪里存着用户轨迹：观测想留 90 天排障，合规红线只许 30 天——同一份数据两个倒计时'},
+  {a:'priv.region', b:'tenant.shardkey', platform:'infra', why:'分片按负载算，数据主权按国界算——两套分片逻辑抢同一张路由表'},
+  {a:'priv.piitag', b:'gate.metrics', platform:'audit', why:'每加一个埋点都要过 PII 评审——「多埋点好做实验」与最小化采集天然对着干'},
+  // —— 计费树 ——
+  {a:'bill.entitlecheck', b:'gate.flagcfg', platform:'gate', why:'if (flag && paid && can(user))——门控、计费、权限三棵树焊在同一行代码里'},
+  {a:'bill.ratelimit', b:'perf.batch', platform:'infra', why:'批量操作算一次调用还是 N 次？限流口径反过来决定 API 的形状'},
+  {a:'bill.usagemeter', b:'obs.metricstd', platform:'audit', why:'计费用量与监控指标走同一条埋点管道——监控可以采样，计费一条都不能丢'},
+  {a:'bill.plans', b:'authz.rbac', platform:'authz', why:'套餐说你「买没买」，角色说你「能不能」——两套「你能用什么」的模型在每个入口叠加'},
+  // —— 多租户树 ——
+  {a:'tenant.dataisol', b:'perf.cache', platform:'infra', why:'缓存键忘带租户前缀，就是把 A 公司的数据发给 B 公司——隔离要求写进每一个键的拼法里'},
+  {a:'tenant.tenantflag', b:'gate.flagcfg', platform:'gate', why:'租户级开关叠在全局 Flag 之上——「这个功能对谁开」的答案要查两棵树'},
+  {a:'tenant.noisy', b:'conc.workerpool', platform:'infra', why:'一个租户的重任务占满线程池，其他租户全部饿死——隔离必须打进调度器深处'},
+  {a:'tenant.percfg', b:'arch.cfg', platform:'infra', why:'配置中心长出租户维度——每个配置项从一个值变成一张表，默认值与覆盖链没人说得清'},
 ];
 
 // 本征耦合（引力对）：问题本身要求这些节点在一起——势必靠近，无法远离
@@ -526,21 +653,23 @@ const GRAVITY=[
   {a:'edit.selset', b:'ui.gizmo', why:'Gizmo 操纵器就是选择集的可视化手柄：两者共享同一份状态，物理上无法分居'},
   {a:'edit.depsgraph', b:'ui.realtime', why:'视口是数据模型的实时投影：依赖图每次增量求值，视口就要重绘对应脏区——帧帧同频（Blender 的 depsgraph ↔ viewport）'},
   {a:'ui.pluginapi', b:'arch.ext', why:'同一个扩展机制的两半：业务侧的 API 表面与架构侧的注册机制，天生一体（VS Code 的 extension host）'},
+  {a:'collab.oplog', b:'edit.snapshot', why:'协同的正史是操作日志，本地撤销的正史是快照与差量——多人撤销必须在两种历史之间实时换算：「撤销我的操作」得先理解别人叠在上面的操作。合并语义与撤销语义互相定义，这是 Figma 类产品最深的一口井'},
+  {a:'conc.mainthread', b:'ui.dirtyrect', why:'渲染循环长在主线程契约上：哪段代码允许碰 UI、哪帧必须让出主线程——线程模型与重绘节拍互为镜像，物理上无法分居'},
 ];
 
 // 幽灵根（图外真相）：这些节点的真正 SSOT 不在仓库里——AI 从文本静态读不到
-// pos 相对于仓库边界中心 (0,0,-6)，半径需大于边界圆环（56）
+// pos 相对于仓库边界中心 (0,0,-22)，半径需大于边界圆环（94）
 const GHOSTS=[
-  {id:'di', n:'DI 容器 · 运行时装配', pos:[-76,15,30], t:['arch.di','ui.pluginapi'],
+  {id:'di', n:'DI 容器 · 运行时装配', pos:[-112,15,42], t:['arch.di','ui.pluginapi'],
    why:'接口在运行时绑定哪个实现，答案写在容器配置和注解扫描里，不在任何调用点的代码里。AI 给接口加参数：老老实实更新了搜到的 4 个实现，却漏掉第 5 个——它由注解注册在别处，换个环境恰好注入它，启动即崩。更隐蔽的版本：AI 看到「只有一个实现」，好心把它内联了——插件生态里还有 30 个外部实现。',
    fix:'收敛为单一显式装配文件，让「谁绑定谁」本身成为一棵有根的树'},
-  {id:'bus', n:'事件总线 · 运行时订阅表', pos:[-64,20,-42], t:['arch.bus','ui.twoway'],
+  {id:'bus', n:'事件总线 · 运行时订阅表', pos:[-92,20,-64], t:['arch.bus','ui.twoway'],
    why:'一个事件发出去，谁在监听、按什么顺序执行、处理完还会不会再发新事件——只有运行时知道。AI 以为改一个订阅者只是局部修改，实际牵动了一整条级联链：n 个订阅者之间有 n² 种潜在交互，还对顺序敏感。',
    fix:'类型化事件 + 可枚举的订阅清单入库，让调用图回到文本里'},
-  {id:'disk', n:'用户磁盘 · 已存在的旧文件', pos:[76,16,32], t:['edit.fileio','edit.scenegraph'],
+  {id:'disk', n:'用户磁盘 · 已存在的旧文件', pos:[112,16,44], t:['edit.fileio','edit.scenegraph'],
    why:'上亿个旧工程文件躺在用户的硬盘里——不在仓库中，也永远改不了。AI 给数据结构加个字段、调换枚举顺序：新代码完美自洽、测试全绿，用户的旧文件却从此打不开。这是「改不动」的极限形态：树的一部分根，长在仓库外面。',
    fix:'golden-file 兼容测试：把「磁盘上的旧世界」采样进仓库'},
-  {id:'deploy', n:'部署系统 · 环境与配置', pos:[66,21,-44], t:['arch.cfg','gate.envisol'],
+  {id:'deploy', n:'部署系统 · 环境与配置', pos:[94,21,-66], t:['arch.cfg','gate.envisol'],
    why:'程序走哪条代码路径，由 YAML 配置和环境变量决定——真相存在部署系统里。AI 眼中的「死代码」，可能正是生产环境的主路径：删掉它，测试全绿，上线全红。',
    fix:'配置 schema 化并纳入类型检查，环境差异收敛为显式矩阵'},
 ];
@@ -558,7 +687,7 @@ const STRATS=[
 ];
 
 const FOCUS_ID='perf.cache';
-const WALL_XS=[-50,-25,0,25,50];
+const WALL_XS=[-75,-50,-25,0,25,50,75];
 
 /* ============================== 场景 ============================== */
 const renderer=new THREE.WebGLRenderer({antialias:true});
@@ -572,22 +701,22 @@ Object.assign(css2d.domElement.style,{position:'fixed',inset:'0',pointerEvents:'
 document.body.appendChild(css2d.domElement);
 
 const scene=new THREE.Scene();
-scene.fog=new THREE.FogExp2(0x0a0e16,0.0042);
+scene.fog=new THREE.FogExp2(0x0a0e16,0.0030);
 
-const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,.1,800);
-camera.position.set(0,42,100);
+const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,.1,900);
+camera.position.set(0,60,152);
 
 const controls=new OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true; controls.dampingFactor=.08;
-controls.minDistance=10; controls.maxDistance=260; controls.maxPolarAngle=Math.PI*.52;
-controls.target.set(0,9,0);
+controls.minDistance=10; controls.maxDistance=380; controls.maxPolarAngle=Math.PI*.52;
+controls.target.set(0,6,-14);
 controls.autoRotateSpeed=.55;
 
 scene.add(new THREE.AmbientLight(0xbfd0ff,.55));
 const dir=new THREE.DirectionalLight(0xffffff,1.1); dir.position.set(24,48,20); scene.add(dir);
 scene.add(new THREE.HemisphereLight(0x3a4a70,0x0a0d14,.5));
 
-const grid=new THREE.GridHelper(230,56,0x2a3446,0x141b28);
+const grid=new THREE.GridHelper(320,78,0x2a3446,0x141b28);
 grid.material.transparent=true; grid.material.opacity=.3; scene.add(grid);
 
 /* ============================== 工具 ============================== */
@@ -847,16 +976,16 @@ function updateGravity(time){
 }
 
 /* ============================== 幽灵根（图外真相） ============================== */
-const boundaryCenter=V3(0,0,-6);
+const boundaryCenter=V3(0,0,-22);
 const ghostGroup=new THREE.Group(); ghostGroup.position.copy(boundaryCenter); scene.add(ghostGroup);
 // 仓库边界：圆环之内 = AI 能读到的全部文本
-const boundaryRing=new THREE.Mesh(new THREE.TorusGeometry(56,.16,8,128),
+const boundaryRing=new THREE.Mesh(new THREE.TorusGeometry(94,.16,8,160),
   new THREE.MeshBasicMaterial({color:GHOSTC,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
 boundaryRing.rotation.x=Math.PI/2; boundaryRing.position.y=.2; boundaryRing.visible=false;
 ghostGroup.add(boundaryRing);
 const bEl=document.createElement('div'); bEl.className='glabel';
 bEl.innerHTML='<b>仓库边界</b><span>环内 = AI 能读到的全部文本</span><span>虚线小环 = 每棵树都可以自成仓库 / 子仓库</span>';
-const bLab=new CSS2DObject(bEl); bLab.position.set(0,2.4,49); bLab.visible=false;
+const bLab=new CSS2DObject(bEl); bLab.position.set(0,2.4,86); bLab.visible=false;
 ghostGroup.add(bLab);
 
 // 树环：仓库边界是嵌套的——每棵树都可以是一个独立仓库或子仓库（虚线 = 潜在的边界）
@@ -923,7 +1052,7 @@ GHOSTS.forEach((g,i)=>{
 let ghostCollect=0, ghostLayerK=1, ringScaleK=1;
 function updateGhosts(t){
   const stage=state.stage;
-  const show=stage===0||stage>=5;
+  const show=stage===0||(stage>=5&&stage!==9);
   const faint=stage===0?.45:1;
   const dim=stage===6?.15:1;
   ghostCollect+=((stratOn('explicit')?1:0)-ghostCollect)*.05;
@@ -934,7 +1063,7 @@ function updateGhosts(t){
   boundaryRing.material.opacity+=(ringTarget-boundaryRing.material.opacity)*.06;
   boundaryRing.visible=boundaryRing.material.opacity>.01;
   bLab.visible=show&&stage>=5&&dim===1;
-  bLab.position.set(0,2.4,49*ringScaleK);
+  bLab.position.set(0,2.4,86*ringScaleK);
   // 树环：分层开启时树被压进层间（墙与接口环接管边界感），树环随之淡出
   const layerBlend=Math.min(1,Math.max(0,(ringScaleK-1)/.62));
   const treeTarget=(show?1:0)*faint*dim*.42*(1-layerBlend);
@@ -979,7 +1108,7 @@ function updateGhosts(t){
 
 /* ============================== 平台树 ============================== */
 const platformGroup=new THREE.Group();
-platformGroup.position.set(0,0,-8); platformGroup.visible=false;
+platformGroup.position.set(0,0,-20); platformGroup.visible=false;
 scene.add(platformGroup);
 const platNodes={};
 let platLabelObj=null;
@@ -1013,9 +1142,9 @@ let platLabelObj=null;
 /* ============================== 分层：墙与接口环 ============================== */
 const gatesGroup=new THREE.Group(); gatesGroup.visible=false; scene.add(gatesGroup);
 WALL_XS.forEach(x=>{
-  const wall=new THREE.Mesh(new THREE.PlaneGeometry(38,26),
+  const wall=new THREE.Mesh(new THREE.PlaneGeometry(62,28),
     new THREE.MeshBasicMaterial({color:0x9fb6ff,transparent:true,opacity:.035,side:THREE.DoubleSide,depthWrite:false}));
-  wall.rotation.y=Math.PI/2; wall.position.set(x,13,0);
+  wall.rotation.y=Math.PI/2; wall.position.set(x,14,0);
   gatesGroup.add(wall);
   const edge=new THREE.LineSegments(new THREE.EdgesGeometry(wall.geometry),
     new THREE.LineBasicMaterial({color:0x9fb6ff,transparent:true,opacity:.18}));
@@ -1028,7 +1157,7 @@ WALL_XS.forEach(x=>{
 });
 
 /* ============================== Loops 雷达 ============================== */
-const radar=new THREE.Mesh(new THREE.CircleGeometry(85,48,0,.45),
+const radar=new THREE.Mesh(new THREE.CircleGeometry(126,48,0,.45),
   new THREE.MeshBasicMaterial({color:0x3ad6c5,transparent:true,opacity:.1,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false}));
 radar.rotation.x=-Math.PI/2; radar.position.y=.25; radar.visible=false;
 scene.add(radar);
@@ -1054,10 +1183,11 @@ function buildCollapse(){
   const lab=new CSS2DObject(el); lab.position.set(0,2.6,0); orb.add(lab);
   aiGroup.add(orb);
 
-  // 4 个必须同时保持的上下文：原义(根) + 3 个交织伙伴；预算只够 2 条实线
+  // 7 个必须同时保持的上下文：原义(根) + 6 个交织伙伴；预算只够 2 条实线
   const targets=[
     {id:'perf.root',solid:true},{id:'authz.rowacl',solid:true},
     {id:'gate.canary',solid:false},{id:'arch.cfg',solid:false},
+    {id:'compat.dualread',solid:false},{id:'priv.forget',solid:false},{id:'tenant.dataisol',solid:false},
   ];
   beams=targets.map((tg,i)=>{
     const n=nodesById.get(tg.id);
@@ -1095,12 +1225,13 @@ function clearCollapse(){
 // 阶段：0 总览 1 一棵树 2 多棵树 3 交织 4 引力 5 图外真相 6 崩塌 7 消解 8 法则
 const state={stage:0, strat:{layer:false,sdd:false,tdd:false,loops:false,platform:false,fusion:false,explicit:false}, revealed:0};
 function stratOn(k){return state.strat[k]&&state.stage>=7;}
-const FOCUS_SET=new Set([FOCUS_ID,'authz.rowacl','gate.canary','arch.cfg','perf.root']);
+const FOCUS_SET=new Set([FOCUS_ID,'authz.rowacl','gate.canary','arch.cfg','perf.root',
+  'compat.dualread','priv.forget','tenant.dataisol']);
 let revealTimer=null, cycleTimer=null, highlightTangle=-1, linkDirty=false;
 let tangleCounts={red:0,amber:0,grey:0,plat:0};
 
 function refreshTangleFlags(){
-  const show=state.stage===0||state.stage>=3;
+  const show=state.stage===0||(state.stage>=3&&state.stage!==9);
   TANGLES.forEach((t,i)=>{
     t.revealedNow=show&&(state.stage!==3||i<state.revealed);
     t.resolvedByLoops=stratOn('loops')&&!stratOn('platform')&&!stratOn('layer')&&i%3===0;
@@ -1165,7 +1296,7 @@ function rebuildTangles(){
 function nodeColor(n){
   if(n.level===0) return GOLD;
   if(n.gravity&&gravityPull>.4) return stratOn('fusion')?GOLD:MAGENTA;
-  if(n.ghost&&state.stage>=5&&state.stage!==6&&!stratOn('explicit')) return GHOSTC;
+  if(n.ghost&&state.stage>=5&&state.stage!==6&&state.stage!==9&&!stratOn('explicit')) return GHOSTC;
   const revealed=n.tangles.filter(t=>t.revealedNow);
   if(!revealed.length) return n.base;
   if(stratOn('platform')) return GOLD;
@@ -1178,6 +1309,7 @@ function refreshNodes(){
     let op=1;
     if(stage===1&&n.tree!==0) op=.1;
     if(stage===6) op=FOCUS_SET.has(n.gid)?1:.13;
+    if(stage===9) op=.14; // 树之树：森林整体退成背景
     const c=nodeColor(n);
     n.mat.color.setHex(c); n.mat.emissive.setHex(c);
     n.mat.opacity=op;
@@ -1193,9 +1325,9 @@ function refreshNodes(){
     if(n.shell) n.shell.visible=stratOn('tdd')&&op>.5;
   }
   trees.forEach((tr,ti)=>{
-    tr.edgeMat.opacity=(stage===1&&ti!==0)?.05:(stage===6?.07:.4);
-    labelEls[ti].classList.toggle('ghost',stage===1&&ti!==0);
-    labelEls[ti].classList.toggle('full',stage>=2);
+    tr.edgeMat.opacity=(stage===1&&ti!==0)?.05:(stage===6?.07:(stage===9?.08:.4));
+    labelEls[ti].classList.toggle('ghost',(stage===1&&ti!==0)||stage===9);
+    labelEls[ti].classList.toggle('full',stage>=2&&stage!==9);
   });
   rootRings.forEach(r=>r.visible=stratOn('sdd'));
 }
@@ -1235,7 +1367,7 @@ function paintEntropy(){
 
 function updateStats(){
   const el=document.getElementById('tangle-stats');
-  if(state.stage<7){el.textContent='';return;}
+  if(state.stage<7||state.stage>8){el.textContent='';return;}
   const {red,amber,grey,plat}=tangleCounts;
   el.innerHTML=
     `偶然交织：<span class="r">${red} 条仍在纠缠</span> · <span class="am">${amber} 条已契约化</span> · <span class="dim">${grey} 条循环中消解</span> · <span class="g">${plat} 条已平台化</span><br>`+
@@ -1248,12 +1380,13 @@ function updateStats(){
 function applyTreePositions(){
   const layered=stratOn('layer');
   trees.forEach(tr=>{
-    const tgt=layered?V3(tr.def.layerX,0,0):V3(...tr.def.pos);
+    // 分层时排成 8 层 × 前后 2 排：同层的两棵树共用一段层间契约
+    const tgt=layered?V3(tr.def.layerX,0,tr.def.layerZ||0):V3(...tr.def.pos);
     if(tr.group.position.distanceTo(tgt)>.05){
       tweenVec(tr.group.position,tgt,1.3,()=>{linkDirty=true;},()=>{linkDirty=true;});
     }
   });
-  const ptgt=layered?V3(0,0,-26):V3(0,0,-8);
+  const ptgt=layered?V3(0,0,-52):V3(0,0,-20);
   if(platformGroup.position.distanceTo(ptgt)>.05){
     tweenVec(platformGroup.position,ptgt,1.3,()=>{linkDirty=true;},()=>{linkDirty=true;});
   }
@@ -1262,8 +1395,8 @@ function applyTreePositions(){
 /* ============================== 文案 ============================== */
 const STAGES=[
  {chip:'STEP 0 · 总览', title:'复杂项目的真实形状',
-  cam:[[0,42,100],[0,9,0]],
-  body:`<p>想象一个 <b>Blender、VS Code</b> 这种量级的复杂软件。它的代码从来不是一棵树，而是<b>好几棵树长在同一块地上</b>：两棵茂密的<b>业务树</b>（编辑核心、交互界面）承载着产品本身；四棵<b>横切树</b>（架构、性能、权限、门控）横着穿过所有业务。</p>
+  cam:[[0,60,152],[0,6,-14]],
+  body:`<p>想象一个 <b>Blender、VS Code</b> 这种量级的复杂软件。它的代码从来不是一棵树，而是<b>一整片森林长在同一块地上</b>：两棵茂密的<b>业务树</b>（编辑核心、交互界面）承载着产品本身；<b>十四棵横切树</b>横着穿过所有业务——从经典的架构、性能、权限、门控，到可观测、并发、容错，再到兼容、安全、隐私、i18n、协同、计费、多租户。</p>
   <p>这片森林里藏着三种麻烦：需求把不同树上的节点焊在一起，结成<span class="r">红色交织</span>；有些节点天生一对，被<span class="mg">洋红引力</span>吸住、分不开；地上的<span class="gh">青色圆环</span>是仓库边界——大环圈住整个工作区，树脚下的虚线小环是说：<b>每棵树都可以自成一个仓库或子仓库</b>；而环外还漂着几个<span class="gh">幽灵根</span>——有些代码的真正答案，压根不在代码里。</p>
   <p>这个模型想回答 AI 时代的一个核心问题：<b>项目复杂到什么程度，AI 会突然看不懂？我们又能做什么？</b></p>
   <div class="hint">👁 <b>观察要点</b>：拖动旋转，先看个全景。红线是偶然交织，洋红光束是本征耦合，牵向环外的虚线是图外真相——后面每一步都会拆开讲。文中带虚线下划线的词，悬停可看解释。</div>`},
@@ -1278,34 +1411,40 @@ const STAGES=[
   </ul>
   <div class="hint">👁 <b>观察要点</b>：悬停任意节点，看它的身份和「含义数」。树深不是问题——只要每个节点始终只有一个意思。</div>`},
  {chip:'STEP 2 · 多棵树', title:'业务树 × 横切树 = 互相冲突的约束力场',
-  cam:[[0,34,80],[0,8,-2]],
-  body:`<p>把视野拉开：六棵树，分两类。</p>
+  cam:[[0,84,142],[0,0,-22]],
+  body:`<p>把视野拉开：十六棵树，分两类。</p>
   <ul>
   <li><b>业务树两棵</b>（<b style="color:#d9e650">编辑核心</b>、<b style="color:#ff7fb2">交互界面</b>）：又深又密。这是域复杂度——Blender 的依赖图、VS Code 的扩展宿主，问题本身就这么难，谁来做都躲不掉；</li>
-  <li><b>横切树四棵</b>：不深，但每棵都横着贯穿全部业务。麻烦在于它们各自守着一种约束，而约束之间互相要价：<b style="color:#5b8cff">架构</b>要可扩展，就得加抽象层，性能先受损；<b style="color:#ff9e4d">性能</b>要快，就得特化、扁平、上缓存，可扩展性又受损；<b style="color:#b28dff">权限</b>若不建通用模型，补丁会越堆越乱、再也收不回来；<b style="color:#3ad6c5">门控</b>的每个开关，都把代码劈成两个平行世界。</li>
+  <li><b>横切树十四棵</b>：不深，但每棵都横着贯穿全部业务，各守一种约束，而约束之间互相要价——
+    <b style="color:#5b8cff">架构</b>要可扩展就得加层，<b style="color:#ff9e4d">性能</b>先受损；<b style="color:#b28dff">权限</b>不建通用模型就收不回来；<b style="color:#3ad6c5">门控</b>的每个开关都是分叉宇宙；
+    <b style="color:#7ee08a">可观测</b>要看全，<b style="color:#dcc98a">隐私</b>要遮住；<b style="color:#d9a05f">并发</b>要并行，一致性要串行；<b style="color:#ff795c">容错</b>的每次重试都在拷问幂等；
+    <b style="color:#6f6fe8">兼容</b>对任何改动都有否决权；<b style="color:#54a8d9">安全</b>把每个输入当敌人；<b style="color:#d97bff">i18n / 无障碍</b>横穿每个字符串每个控件；
+    <b style="color:#9fdf5f">协同</b>要求一切可合并；<b style="color:#b0e04d">计费</b>一条数据都不能丢；<b style="color:#9a5fd0">多租户</b>让每个缓存键多背一个维度。</li>
   </ul>
   <p>不存在「同时最优」。所谓项目演化，就是业务树在这些互相冲突的约束里找路往上长。</p>
   <div class="hint">👁 <b>观察要点</b>：每棵树的标签下写着它的视角与代价。注意此刻树与树之间还没有一根连线——这是理想国，马上就要被打破。</div>`},
  {chip:'STEP 3 · 交织', title:'需求把树焊在了一起',
-  cam:[[0,28,66],[0,7,-2]],
-  body:`<p>需求从来不会安分地待在一棵树里。比如「批量导出场景报表」这一个需求，会同时踩进<b>性能</b>（批量、缓存）、<b>权限</b>（行级过滤）、<b>门控</b>（灰度）、<b>架构</b>（服务边界）四棵树。</p>
-  <p>红线正在一条条出现——连业务树也被卷了进来：<span class="dim">宏录制录到了实验分支的行为、Undo 快照被批量写入打乱了顺序、插件沙箱借用了 API 鉴权、快捷键被迫关心开关的状态、布局状态搭上了文件格式的便车……</span>被焊住的节点变红，长出<span class="r">多义性光环</span>：多一环，就是多背了一个含义。</p>
-  <p>一个残酷的规律：<b>越是能「拉通」全局的强能力（权限、门控、缓存），制造的红线越多</b>。对用户最有价值的能力，恰恰是纠缠的最大来源。</p>
+  cam:[[0,66,126],[0,3,-20]],
+  body:`<p>需求从来不会安分地待在一棵树里。比如「批量导出场景报表」这一个需求，会同时踩进<b>性能</b>（批量、缓存）、<b>权限</b>（行级过滤）、<b>门控</b>（灰度）、<b>架构</b>（服务边界）、<b>计费</b>（导出算不算用量）、<b>隐私</b>（报表里的 PII）六棵树。</p>
+  <p>红线正在一条条出现——连业务树也被卷了进来：<span class="dim">宏录制录到了实验分支的行为、Undo 快照被批量写入打乱了顺序、插件沙箱借用了 API 鉴权、缓存键忘了带租户前缀、重试风暴时日志采样恰好最狠、被遗忘权要追进每一层缓存……</span>被焊住的节点变红，长出<span class="r">多义性光环</span>：多一环，就是多背了一个含义。</p>
+  <p>一个残酷的规律：<b>越是能「拉通」全局的强能力（权限、门控、缓存、租户隔离），制造的红线越多</b>。对用户最有价值的能力，恰恰是纠缠的最大来源。十四棵横切树全部亮起后，红线密到什么程度——你正在亲眼看到。</p>
   <div class="hint">👁 <b>观察要点</b>：悬停任何一条红线或红色节点，看真实世界里的纠缠案例。下方的案例栏会自动轮播。</div>`},
  {chip:'STEP 4 · 引力', title:'有些节点，注定分不开',
-  cam:[[0,21,58],[0,8,4]],
+  cam:[[0,46,102],[0,4,-10]],
   body:`<p>交织分两种。上一步的红线是<b>偶然交织</b>：需求恰好路过，把两个本不相干的节点绑在了一起——换个设计，理论上能解开。而另一种解不开：<span class="mg">本征耦合</span>——<b>问题本身要求这两个节点在一起</b>：</p>
   <ul>
   <li>命令系统 ⚡ Undo 栈：每个命令都必须能撤销，两边互为镜像，改一个必改另一个；</li>
   <li>Gizmo ⚡ 选择集：拖拽手柄就是选择集的可视化，两者共享同一份状态；</li>
   <li>实时视口 ⚡ 依赖图：画面是数据的实时投影，每一帧都要同步；</li>
-  <li>插件 API ⚡ 扩展点注册：同一套扩展机制的两半，生来就是一体。</li>
+  <li>插件 API ⚡ 扩展点注册：同一套扩展机制的两半，生来就是一体；</li>
+  <li>操作日志 ⚡ Undo 快照：多人撤销必须同时理解合并与撤销，两种历史互相定义；</li>
+  <li>主线程契约 ⚡ 脏区重绘：渲染节拍长在线程模型上，物理上无法分居。</li>
   </ul>
   <p>看，这些节点正在<b>挣脱树的形状、互相靠近</b>——洋红引力束。树可以拉开，它们拉不开；硬要分层，只会把连着它们的枝干越拉越长（到「消解」一步可以亲手试试）。</p>
   <p><b>分清偶然与本征，是一切治理的前提</b>：偶然的可以消解，本征的只能承认。</p>
   <div class="hint">👁 <b>观察要点</b>：悬停洋红引力束，看每一对为什么拆不开。留意被拉弯的树枝——树形正在被引力扭曲。</div>`},
  {chip:'STEP 5 · 图外真相', title:'幽灵根：真相不在文本里',
-  cam:[[0,78,96],[0,4,-6]],
+  cam:[[0,118,138],[0,2,-22]],
   body:`<p>交织和引力再麻烦，至少还<b>画在图里</b>——attention 预算贵，但花够了就能读懂。最难缠的是第三种：<b>决定代码行为的真相，离开了仓库</b>。</p>
   <p>地上的<span class="gh">青色圆环就是仓库边界</span>：环内是 AI 能读到的全部文本。这条边界还是<b>嵌套</b>的——每棵树脚下都有一圈虚线小环：<b>每棵树都可以是一个独立的仓库，或大仓里的一个子仓库</b>。边界划在哪一级是工程选择：拆得越小，AI 一次要读的文本越少；但每一条跨环的依赖都必须变成显式契约，否则它就是下一个幽灵根。</p>
   <p>而真正的麻烦，漂在<b>所有环之外</b>。四个<span class="gh">幽灵根</span>才是某些节点真正的事实源——无论边界怎么划，都圈不住它们：</p>
@@ -1320,22 +1459,25 @@ const STAGES=[
   <div class="hint">👁 <b>观察要点</b>：悬停幽灵根和虚线，每个都是一则完整的事故。被虚线牵住的节点在闪烁——它们的含义不由自己决定。</div>`},
  {chip:'STEP 6 · 崩塌', title:'多义性 vs Attention 预算',
   cam:null, // 运行时按焦点节点计算
-  body:`<p>盯住「<b>缓存策略</b>」这一个节点。此刻它同时背着 <b>4 个含义</b>：</p>
+  body:`<p>盯住「<b>缓存策略</b>」这一个节点。十四棵横切树全部就位后，它同时背着 <b>7 个含义</b>：</p>
   <ul>
   <li>① <b style="color:#ff9e4d">性能</b>的原义：命中率与 TTL 怎么权衡；</li>
   <li>② 加上<span class="r">权限</span>：缓存键里必须编进权限信息；</li>
   <li>③ 加上<span class="r">门控</span>：灰度期间，新旧两种数据形状同时存在；</li>
-  <li>④ 加上<span class="r">架构</span>：TTL 的事实源在另一棵树上。</li>
+  <li>④ 加上<span class="r">架构</span>：TTL 的事实源在另一棵树上；</li>
+  <li>⑤ 加上<span class="r">兼容</span>：双读双写期间，同一个键存着两个 schema 版本；</li>
+  <li>⑥ 加上<span class="r">隐私</span>：被遗忘权的删除请求要追进每一层缓存；</li>
+  <li>⑦ 加上<span class="r">多租户</span>：键的拼法里必须带租户前缀，忘了就是事故。</li>
   </ul>
   <p>这就是自然语言里「多义词」的困境在代码中重演：同一个名字，要靠上下文才能确定此刻指哪个意思。可 attention 预算是有限的——<b>实线</b>是装得进上下文的部分，<span class="r">红色虚线</span>是装不下的部分。必须同时记住的含义一旦超出预算，消歧失败：AI 开始幻觉式修改，越改越坏。</p>
-  <p><b>崩塌不是慢慢变差，而是跌下悬崖。</b>若再叠上图外真相，AI 甚至发现不了「自己已经不懂了」。</p>
-  <div class="hint">👁 <b>观察要点</b>：AI 球需要同时保持 4 条上下文光束，预算却只够 2 条——看虚线在挣扎地闪烁。</div>`},
+  <p><b>崩塌不是慢慢变差，而是跌下悬崖。</b>横切树越多，每个「强节点」背的含义越多，悬崖来得越早。若再叠上图外真相，AI 甚至发现不了「自己已经不懂了」。</p>
+  <div class="hint">👁 <b>观察要点</b>：AI 球需要同时保持 7 条上下文光束，预算却只够 2 条——看虚线在挣扎地闪烁。</div>`},
  {chip:'STEP 7 · 消解', title:'七种手术：对这张图动刀',
-  cam:[[0,32,72],[0,8,-2]],
+  cam:[[0,48,112],[0,8,-16]],
   body:`<p>经典的工程策略，本质上都是在对这张图动手术。<b>逐个打开下面的开关</b>，看右上角的语义熵怎么下降。思路无非三种：<span class="gr">让每个节点的含义变少</span>（TDD、SDD），<span class="am">让必须同时看见的交织变少</span>（分层、平台化），或者<b>让纠缠长得慢一点</b>（Loops）。</p>
   <p>但有两类病灶，前五把刀全都无效：<span class="mg">洋红引力对</span>——打开「分层」试试，枝干拉得再长它们也不松手，只有「<span class="g">共域</span>」能安置它们；<span class="gh">青色幽灵根</span>——它们的真相根本不在图里，只有「<span class="g">显式化</span>」能把真相收编回仓库（虚线变实线，节点不再闪烁）。</p>`},
  {chip:'STEP 8 · 法则', title:'AI 时代的复杂度治理法则',
-  cam:[[0,40,92],[0,9,-2]],
+  cam:[[0,74,176],[0,6,-2]],
   body:`<div class="formula">AI 可驾驭的复杂度 ≈ <span class="g">Attention 预算</span> × <span class="am">结构显式度</span> ÷ <span class="r">节点平均多义性</span></div>
   <ul>
   <li><b>人守根</b>：每棵树的 SSOT、spec、平台接口，必须有人守着——这是不能让 AI 随便写的部分；</li>
@@ -1345,8 +1487,188 @@ const STAGES=[
   <li><b>持续治理交织</b>：显式化、限速、分区、定期清理——但别把力气浪费在拆那些本来就拆不开的东西上。</li>
   </ul>
   <div class="quote">复杂度不能被消灭，只能被<b>安置</b>。<br>好的工程体系，把多义性安置在 attention 预算之内，把真相安置在仓库边界之内——<br>并且分得清：哪些距离可以拉开，哪些距离本来就不存在。</div>`},
+ {chip:'STEP 9 · 树之树', title:'树也长成树：生长顺序即系统命运',
+  cam:[[0,68,120],[0,62,-22]],
+  body:`<p>最后，换一个高度看这片森林：<b>这些树本身，也组成一棵更大的树</b>。没有一棵横切树是凭空出现的——它总是从另一棵树的痛点里长出来：界面一卡，线程模型被迫成文；事故排查逼出可观测；有了指标才敢灰度。<b>「从谁的痛点里长出来」，就是「谁的孩子」</b>。</p>
+  <p>关键在于：<b>同一组树，两种生长顺序，长成两棵完全不同的「树之树」</b>。先有 A 再有 B，B 就得在 A 定好的地形上绕着走；先有 B 再有 A，被塑形的就是 A。三组顺序对照：</p>
+  <ul>
+  <li><b>先性能后权限</b>：缓存键第一天没有权限位，行级权限一来，整层缓存重写；<b>先权限后性能</b>：每条路径生而过权限，干净——但基线延迟高，快是后来抠出来的；</li>
+  <li><b>先 Undo 后协同</b>：单人史观的撤销，多人一来推翻重写；<b>先协同后 Undo</b>：撤销天生是「撤销我的操作」——代价是离线单机成了二等公民；</li>
+  <li><b>先观测后门控</b>：每次灰度都有指标护航；<b>先门控后观测</b>：第一批灰度是盲飞，但发布纪律建得早。</li>
+  </ul>
+  <div id="meta-paths"></div>
+  <div id="meta-traits"></div>
+  <div class="hint">👁 <b>观察要点</b>：金色序号 = 生长次序；连线 = 「从谁的痛点里长出来」；虚线垂向下方暗去的森林——每个节点都是下面一棵真实的树。切换两条路径，看同一组树长出两棵不同的元树。悬停任意节点，看它为什么长在那个位置。</div>`},
 ];
-const DOT_NAMES=['总览','一棵树','多棵树','交织','引力','图外真相','崩塌','消解','法则'];
+const DOT_NAMES=['总览','一棵树','多棵树','交织','引力','图外真相','崩塌','消解','法则','树之树'];
+
+/* ============================== 树之树（STEP 9）数据 ============================== */
+// seq 是拓扑序：每一项 = {t:树id, p:父树id|null, why:为什么它从父树的痛点里长出来}
+const META_PATHS=[
+ {k:'tool', name:'路径 A · 单机工具长成平台', proto:'Blender / VS Code 的一生', pct:'手感为根',
+  desc:'从「一个人用的编辑器」出发，为手感与深度而生，联网与商业化是晚年移植的器官。',
+  seq:[
+    {t:'edit',  p:null,    why:'第一行代码是数据模型：一切从「文档长什么样」开始——元根是「深度编辑」这个第一性假设'},
+    {t:'ui',    p:'edit',  why:'模型要被看见、被拖拽——交互长在数据模型上，手感开始成为信仰'},
+    {t:'conc',  p:'ui',    why:'界面一卡，全网骂声：主线程契约被迫成文，线程模型从 UI 的痛点里长出来'},
+    {t:'perf',  p:'conc',  why:'能并行之后才谈得上快：帧率与吞吐成为专门的树——手感 = 性能'},
+    {t:'compat',p:'edit',  why:'第一个用户存下第一个文件的那天，兼容承诺开始生效——从此改格式要过它'},
+    {t:'arch',  p:'ui',    why:'插件生态的呼声催生扩展架构：extension host、扩展点——架构从生态的痛点里长出来'},
+    {t:'sec',   p:'arch',  why:'扩展机制打开攻击面：第三方代码要跑在沙箱里——安全跟着插件来'},
+    {t:'i18n',  p:'ui',    why:'出海：每个字符串、每条键位被重新检查一遍——最浅但最宽的树补种上'},
+    {t:'fault', p:'conc',  why:'并发带来部分失败：崩溃恢复、自动保存的语义要有人管——容错成树'},
+    {t:'obs',   p:'fault', why:'排障靠日志考古太苦：结构化日志、指标、追踪——观测在事故里长大'},
+    {t:'gate',  p:'obs',   why:'有了指标才敢灰度：门控踩着观测出生——每次发布有数据护航'},
+    {t:'collab',p:'arch',  why:'联网协同是晚年移植的器官：长在扩展与服务架构上，而不是长在数据模型根部'},
+    {t:'authz', p:'collab',why:'多人才有「谁能改什么」：权限跟着协同来——单机时代它根本不存在'},
+    {t:'tenant',p:'authz', why:'上云卖给企业：租户维度硬加进每个缓存键、每张表——最痛的一次追加'},
+    {t:'bill',  p:'tenant',why:'订阅制：权益与配额接管所有入口——if (paid) 追补到每个功能'},
+    {t:'priv',  p:'bill',  why:'收钱即合规：GDPR 的删除请求追进每一层缓存与备份——最后一棵树最难种'},
+  ],
+  strong:'单机手感、极致性能、深度编辑能力、繁荣的插件生态——骨骼长在「深与快」上。',
+  weak:'协同 / 多租户 / 计费是移植的器官：数据模型没为「可合并」设计，Undo 是单人史观，租户维度靠大迁移硬加——Blender 至今没有原生实时协同。',
+  law:'先长的树定义地形：手感为根的系统，「深」是骨骼，「联网」是假肢。'},
+ {k:'saas', name:'路径 B · 云原生 SaaS 第一天', proto:'Figma / Slack 的出身', pct:'协同为根',
+  desc:'从「一群人同时在线」出发，协同与租户写进第一张表，单机深度是后来补的课。',
+  seq:[
+    {t:'collab',p:null,    why:'第一天就是多人：数据模型生而可合并（CRDT / OT 是根）——元根是「同时在线」这个第一性假设'},
+    {t:'tenant',p:'collab',why:'多人即多租户：隔离写进第一张表的主键——tenant_id 生而有之，不用迁移'},
+    {t:'authz', p:'tenant',why:'租户里有角色：权限模型与数据模型同龄——每条查询生而带权限'},
+    {t:'edit',  p:'collab',why:'编辑 = 发操作：业务树长在同步引擎上——文档是操作日志的投影'},
+    {t:'ui',    p:'edit',  why:'界面是会话的投影：人人看得见彼此的光标——在场感是产品的一部分'},
+    {t:'gate',  p:'ui',    why:'每周上线：没有灰度不敢发布——门控在观测之前就位，发布纪律先于数据'},
+    {t:'obs',   p:'gate',  why:'灰度要看数据：观测跟着发布节奏出生——第一批灰度是盲飞，此后不再'},
+    {t:'bill',  p:'tenant',why:'席位订阅：计费长在租户模型上——权益检查与租户隔离共用一套主键'},
+    {t:'fault', p:'obs',   why:'半夜的告警教会团队容错：重试、熔断、降级——SLA 写进合同后成树'},
+    {t:'perf',  p:'obs',   why:'增长之后才优化：性能是被指标逼出来的——文件一大就卡的账单开始到期'},
+    {t:'arch',  p:'perf',  why:'单体扛不动了：拆服务、划边界——架构从性能的痛点里长出来（与路径 A 相反）'},
+    {t:'conc',  p:'arch',  why:'拆完服务，进程内的并发问题浮出水面：锁序、背压——并发树最后才被正视'},
+    {t:'compat',p:'arch',  why:'API 开放给集成方的那天，兼容承诺才开始生效——比工具路径晚了一个纪元'},
+    {t:'priv',  p:'bill',  why:'收欧洲客户的钱：GDPR、数据主权——隐私跟着合同来'},
+    {t:'sec',   p:'priv',  why:'合规审计倒逼安全体系化：密钥轮换、供应链审计、渗透测试'},
+    {t:'i18n',  p:'bill',  why:'出海扩张：文案、RTL、无障碍最后补课——增长团队的需求单'},
+  ],
+  strong:'天生多人、租户隔离干净、发布快、商业化顺滑——骨骼长在「同时在线」上。',
+  weak:'单机与离线是二等公民；深度编辑能力（修改器栈、非破坏编辑）难长出来；性能天花板受制于第一天的协同数据结构——文件一大就卡。',
+  law:'同一条法则的镜像：协同为根的系统，「多人」是骨骼，「深」是假肢。'},
+];
+
+/* ============================== 树之树（STEP 9）可视化 ============================== */
+// 每棵树坍缩成一个球（元节点），按「从谁的痛点里长出来」连成一棵更大的树；
+// 金色序号 = 生长次序；虚线垂向下方森林里这棵树的真身。
+const metaGroup=new THREE.Group(); metaGroup.position.copy(boundaryCenter); metaGroup.visible=false; scene.add(metaGroup);
+const treeById={}; trees.forEach(tr=>treeById[tr.def.id]=tr);
+let metaPathIdx=0, metaStart=0, metaItems=[];
+const META_STEP=.72, META_GROW=.62;
+
+function clearMeta(){
+  metaGroup.traverse(o=>{if(o.isCSS2DObject&&o.element)o.element.remove();});
+  disposeGroup(metaGroup);
+  metaItems=[];
+}
+function buildMetaTree(){
+  clearMeta();
+  const P=META_PATHS[metaPathIdx];
+  const kids={},depth={};
+  P.seq.forEach(s=>{kids[s.t]=[];});
+  P.seq.forEach(s=>{if(s.p)kids[s.p].push(s.t); depth[s.t]=s.p?depth[s.p]+1:0;});
+  // 叶序定 x：整棵元树自然摊开
+  const xs={}; let leaf=0;
+  (function place(id){
+    const c=kids[id];
+    if(!c.length){xs[id]=leaf++;return;}
+    c.forEach(place);
+    xs[id]=(xs[c[0]]+xs[c[c.length-1]])/2;
+  })(P.seq[0].t);
+  const W=18, DY=11.5, Y0=24;
+  const posOf=id=>V3((xs[id]-(leaf-1)/2)*W, Y0+depth[id]*DY, 0);
+  P.seq.forEach((s,i)=>{
+    const tr=treeById[s.t], color=tr.def.color, pos=posOf(s.t);
+    const orb=new THREE.Mesh(new THREE.SphereGeometry(tr.def.kind==='biz'?3.0:2.5,24,18),
+      new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.5,roughness:.35,metalness:.15,transparent:true}));
+    orb.position.copy(pos); orb.visible=false;
+    orb.userData.meta={seq:s,idx:i,def:tr.def,parentDef:s.p?treeById[s.p].def:null};
+    metaGroup.add(orb);
+    let rim=null;
+    if(!s.p){ // 元根：金色线框环，与树根同款语义（第一性假设由人守护）
+      rim=new THREE.Mesh(new THREE.SphereGeometry(3.9,14,10),
+        new THREE.MeshBasicMaterial({color:GOLD,wireframe:true,transparent:true,opacity:.4}));
+      orb.add(rim); // 自转在 updateMeta 里做——metaGroup 会反复重建，不能挂进全局 spinners
+    }
+    const el=document.createElement('div');
+    el.className='mlabel';
+    el.innerHTML=`<span style="color:#${color.toString(16).padStart(6,'0')}"><span class="seq">${i+1}</span>${tr.def.short}</span>`+
+      (s.p?'':'<span class="mroot">元根 · 第一性假设</span>');
+    const lab=new CSS2DObject(el); lab.position.set(0,tr.def.kind==='biz'?4.6:4.1,0); lab.visible=false;
+    orb.add(lab);
+    let edge=null,parentPos=null;
+    if(s.p){
+      parentPos=posOf(s.p);
+      edge=makeCylinder(.2,new THREE.MeshBasicMaterial({color:GOLD,transparent:true,opacity:.4}));
+      edge.visible=false; metaGroup.add(edge);
+    }
+    const drop=new THREE.Line(new THREE.BufferGeometry(),
+      new THREE.LineDashedMaterial({color,transparent:true,opacity:.22,dashSize:1.6,gapSize:1.3}));
+    drop.visible=false; metaGroup.add(drop);
+    metaItems.push({s,i,tr,orb,lab,edge,parentPos,pos,drop,rim,at:.35+i*META_STEP});
+  });
+  metaStart=clock.getElapsedTime();
+}
+function updateMeta(t){
+  if(!metaGroup.visible)return;
+  const el=t-metaStart;
+  for(const m of metaItems){
+    const k=Math.min(1,Math.max(0,(el-m.at)/META_GROW));
+    if(m.edge){ // 先从父节点把枝长过来，长到了球再冒出来
+      m.edge.visible=k>0;
+      if(k>0){
+        // 注意：setCylinder 内部占用 _v1 做临时量，这里只能用 _v2/_v3
+        _v2.copy(m.parentPos);
+        _v3.copy(m.parentPos).lerp(m.pos,easeOut(Math.min(1,k/.62)));
+        setCylinder(m.edge,_v2,_v3);
+      }
+    }
+    const ok=m.s.p?Math.max(0,(k-.55)/.45):k;
+    m.orb.visible=ok>0;
+    if(ok>0){
+      m.orb.scale.setScalar(.01+easeOut(ok)*.99);
+      m.orb.material.emissiveIntensity=.45+.18*Math.sin(t*2.1+m.i*.8)+(k<1?.6*(1-k):0);
+      if(m.rim)m.rim.rotation.y=t*.5;
+    }
+    m.lab.visible=ok>.72;
+    // 虚线垂向森林里的真身（树可能还在归位动画中，端点逐帧取）
+    const dropOn=ok>.4;
+    m.drop.visible=dropOn;
+    if(dropOn){
+      _v3.set(m.tr.group.position.x,lvlOf(m.tr.def.kind,0).y,m.tr.group.position.z).sub(metaGroup.position);
+      m.drop.geometry.setFromPoints([m.pos,_v3]);
+      m.drop.computeLineDistances();
+      m.drop.material.opacity=.2*Math.min(1,(ok-.4)/.6)*(.7+.3*Math.sin(t*1.6+m.i));
+    }
+  }
+}
+function metaTooltip(meta){
+  const p=meta.parentDef;
+  return `<b>${meta.seq.p?'':'🌱 '}${meta.def.name}</b>`+
+    `<span class="tt-kind">树之树 · 第 ${meta.idx+1} 个长出${p?` · 从「${p.short}」的痛点里长出`:' · 元根'}</span>`+
+    `<div class="tt-desc">${meta.seq.why}</div>`+
+    `<div style="margin-top:4px;color:#93a0b8">${meta.def.constraint}</div>`;
+}
+function renderMetaUI(){
+  const box=$('meta-paths'); if(!box)return;
+  box.innerHTML='';
+  META_PATHS.forEach((p,i)=>{
+    const b=document.createElement('button');
+    b.className='strat'+(i===metaPathIdx?' on':'');
+    b.innerHTML=`<span class="s-name">${p.name}<em>${p.pct}</em></span><span class="s-desc"><b style="color:#dfe6f3">${p.proto}</b> —— ${p.desc}</span>`;
+    b.onclick=()=>{metaPathIdx=i; buildMetaTree(); renderMetaUI();}; // 点已选中的路径 = 重播生长
+    box.appendChild(b);
+  });
+  const P=META_PATHS[metaPathIdx];
+  $('meta-traits').innerHTML=
+    `<div class="quote"><b class="g">骨骼</b>：${P.strong}<br><b class="r">假肢</b>：${P.weak}<br><span class="dim">${P.law}</span></div>`;
+  annotateTerms(box); annotateTerms($('meta-traits'));
+}
 
 /* ============================== 名词解释（悬停词条弹出） ============================== */
 const TERMS={};
@@ -1413,6 +1735,53 @@ defTerm('审计','audit','把「谁在什么时候做了什么」逐条记录在
 defTerm('抽象层','abstraction layer','在调用方和实现之间加的「中间人」，用来隔离变化。每加一层，灵活性多一分，性能和直读性就少一分。');
 defTerm('特化','specialization','为特定场景写死的快速路径：跑得快，但失去通用性，场景一变就得重写。');
 defTerm('owner','负责人','一段代码明确的责任人：谁设计、谁评审、出了问题谁兜底。共域的核心动作之一，就是让引力对归同一个 owner。');
+// —— 新横切树的领域名词 ——
+defTerm('可观测性|可观测','observability','从外部输出（日志、指标、链路追踪）推断系统内部状态的能力。它自己也是横切的：每个模块都要交出自己的「体检数据」。');
+defTerm('链路追踪','distributed tracing','给每个请求发一张「旅行护照」，途经的每个服务都盖章。一次慢查询穿过了哪 8 个服务、卡在哪一站，靠它还原。');
+defTerm('结构化日志','structured logging','日志不写成随意的句子，而是写成机器可解析的字段（JSON 等）。人可读性让位给可检索、可聚合、可脱敏。');
+defTerm('日志采样','log sampling','流量太大时只记录一部分日志省成本。风险：出事的往往是流量洪峰，恰好是采样丢得最狠的时刻。');
+defTerm('SLO','Service Level Objective · 服务目标','对「服务好到什么程度」的量化承诺，比如 99.9% 请求在 200ms 内返回。告警和错误预算都从它推导。');
+defTerm('告警','alerting','指标越过阈值时主动叫醒人。告警规则写得准不准，决定团队是「先于用户发现」还是「被用户发现」。');
+defTerm('主线程契约|主线程','main thread contract','UI 程序的铁律：哪些事只能在主线程做（画界面）、哪些事绝不能在主线程做（重计算）。违约的代价就是卡顿。');
+defTerm('锁序|锁序约定','lock ordering','多把锁必须按全局约定的顺序获取，否则两个线程各拿一把、互等对方——死锁。锁序是一份看不见的全局契约。');
+defTerm('背压','backpressure','下游处理不过来时，向上游传递「慢一点」的信号。没有背压的系统，过载时不是变慢，而是雪崩。');
+defTerm('幂等|幂等键','idempotency','同一个操作执行一次和执行三次，结果一样。有了幂等，重试才是安全的；没有它，重试就是重复扣款。');
+defTerm('退避','backoff','重试不能立刻重试，要越等越久（指数退避），否则所有客户端同时重试，把刚要恢复的服务再次打倒。');
+defTerm('断路器|熔断','circuit breaker','连续失败太多次就「跳闸」：直接快速失败，不再把请求打到已经病倒的依赖上，给它喘息时间。');
+defTerm('降级','graceful degradation','资源不够或依赖故障时，主动关掉不重要的能力、保住核心路径——比如高峰期先关推荐、保下单。');
+defTerm('兜底路径|兜底','fallback','主路径失败后走的备用逻辑。危险在于：兜底往往是老代码，平时没人走、没人测，也没人记得给它接上新的权限模型。');
+defTerm('语义化版本','semantic versioning · semver','用版本号表达兼容性承诺：改大版本 = 允许不兼容，改小版本 = 只加不破坏。生态靠这套暗号决定敢不敢升级。');
+defTerm('双读双写','dual read/write','数据结构迁移期间新旧两份同时读写，逐步切换。期间同一份数据存在两种形状——所有中间层都必须两种都认识。');
+defTerm('Schema 迁移','schema migration','把数据从旧结构升级到新结构的转换。它必须认识所有历史版本——和文件格式的版本迁移是同一类工作的两个分身。');
+defTerm('版本协商|协议协商','protocol negotiation','通信双方先交换「你支持到哪个版本」，再按双方都懂的最高版本对话。协同场景里新旧客户端并存，每一秒都在协商。');
+defTerm('PII','Personally Identifiable Information · 个人身份信息','能定位到具体个人的数据：姓名、手机号、IP、行为轨迹。它流到哪里（日志？缓存？埋点？），合规义务就跟到哪里。');
+defTerm('被遗忘权','right to be forgotten','用户有权要求彻底删除自己的数据——「彻底」包括每一层缓存、每一份备份、每一条日志。这一个动作横穿所有存储。');
+defTerm('数据主权|地域驻留','data residency','某些国家要求本国用户的数据必须存在本国境内。分片、备份、容灾的拓扑从此多了一个「按国界切」的维度。');
+defTerm('保留期','data retention','数据最多能存多久的规定。观测想多留（排障），合规想少留（风险）——同一份数据挂着两个倒计时。');
+defTerm('GDPR','欧盟《通用数据保护条例》','全球最严的数据隐私法之一：最小化采集、被遗忘权、跨境限制、天价罚款。收欧洲用户的钱，就要接受它的管辖。');
+defTerm('RTL','right-to-left · 从右往左','阿拉伯语、希伯来语的书写方向。支持 RTL 不是翻转文字，而是整个界面镜像——布局系统必须从第一天就懂「方向」。');
+defTerm('无障碍|a11y','accessibility','让残障用户也能用：屏幕阅读器读得出每个控件（语义标注）、不用鼠标也能操作一切（键盘可达）。它是验收标准，不是可选项。');
+defTerm('i18n','internationalization · 国际化','让软件适配任何语言与文化：文案外置、复数规则、日期格式、RTL 布局。每个写死的字符串都是它的敌人。');
+defTerm('CRDT','Conflict-free Replicated Data Type · 无冲突复制数据类型','一种特殊设计的数据结构：多人同时改、离线改，合并结果都唯一确定，不需要中央裁判。代价是数据模型从第一天就要按它的规则长。');
+defTerm('操作日志','operation log','把「发生过的每一步操作」按序记录为正史，当前状态只是它的投影。协同、审计、回放都长在这份日志上。');
+defTerm('在场|状态广播','presence','「谁此刻也在这个文档里、光标在哪、选中了什么」的实时信息。让协作有体温的东西，也是流量放大器。');
+defTerm('离线重放','offline replay','断网期间的操作先记在本地，恢复连接后按序重放合并。它与自动保存、撤销栈共享「恢复现场」这块地盘。');
+defTerm('权益|entitlement','entitlement','「这个账号买了什么、能用什么」的授权体系。它与权限（能不能）和门控（开没开）是三套独立的判断，却常常挤在同一个 if 里。');
+defTerm('配额','quota','每个账号/租户的用量上限：调用次数、存储空间、并发数。配额挂在谁身上、怎么计数，反过来定义 API 的形状。');
+defTerm('限流|速率限制','rate limiting','单位时间内最多处理多少请求，超出的拒绝或排队。保护系统不被压垮的闸门，也是计费套餐的分界线。');
+defTerm('计量','metering','精确记录每一笔用量用于计费。与监控指标走同一条管道，但要求完全不同：监控可以采样，计量一条都不能丢。');
+defTerm('多租户|租户','multi-tenancy','一套系统同时服务多家客户（租户），彼此的数据、性能、配置必须互不可见。租户维度会渗进每个缓存键、每张表、每个队列。');
+defTerm('邻居噪音','noisy neighbor','共享资源下，一个租户的重负载拖慢其他所有租户。隔离必须打进调度器和资源池深处，光在数据层隔离不够。');
+defTerm('分片','sharding','数据太大放不进一台机器，按某个键（分片键）切开分布到多台。键选错了，热点全挤在一片上；主权来了，还得按国界再切一刀。');
+defTerm('供应链','software supply chain','你的代码依赖的所有第三方包、镜像、构建工具。任何一环被投毒或爆出漏洞（CVE），都等于你的漏洞。');
+defTerm('CVE','公开漏洞编号','全球统一的安全漏洞登记号。CVE 一发布，攻击者和你同时知道——修补是一场倒计时赛跑，而兼容承诺常常拖住你的腿。');
+defTerm('密钥轮换','key rotation','定期更换密钥，泄露的旧钥匙自动失效。前提是「谁在用哪把钥匙」有一份准账——密钥的 SSOT 之争由此而来。');
+// —— 树之树（STEP 9） ——
+defTerm('树之树|元树','tree of trees · 本模型自造','把每棵树坍缩成一个点、按「从谁的痛点里长出来」连成的更大的树。它画的不是代码结构，而是系统的生长史。');
+defTerm('元根','meta root · 本模型自造','树之树的根：这个产品的第一性假设。工具路径的元根是「深度编辑」，SaaS 路径的元根是「同时在线」——之后的一切都在它定下的地形上生长。');
+defTerm('第一性假设','first-principle assumption','产品从第一天就默认成立、从不讨论的前提。它不写在任何文档里，却决定每棵树往哪里长——想换掉它，等于重写整个系统。');
+defTerm('路径依赖','path dependence','系统今天的形状由它的历史顺序决定：先长的树定义地形，后长的树只能绕着走。同一组能力、不同的获得顺序，长成完全不同的系统。');
+defTerm('SLA','Service Level Agreement · 服务等级协议','写进合同的可用性承诺（如全年 99.95%），赔真金白银。SLA 一签，容错和观测就从「工程美德」变成「财务义务」。');
 // —— Blender / VS Code 领域名词 ——
 defTerm('插件沙箱|沙箱','sandbox','受限的运行环境：插件在里面只能使用被明确批准的能力，防止越权访问主程序或用户数据。');
 defTerm('扩展宿主','extension host','VS Code 专门用来运行插件的独立进程：所有插件都住在里面，插件崩溃也不会拖垮编辑器本体。');
@@ -1473,11 +1842,12 @@ function renderPanel(){
   $('stage-body').innerHTML=s.body;
   $('case-box').style.display=state.stage===3?'block':'none';
   if(state.stage===3)$('case-box').innerHTML='<span class="dim">纠缠正在产生……</span>';
-  $('strategies').style.display=state.stage>=7?'block':'none';
+  $('strategies').style.display=(state.stage>=7&&state.stage<=8)?'block':'none';
   $('prev').style.visibility=state.stage===0?'hidden':'visible';
   $('next').textContent=state.stage===STAGES.length-1?'↺ 回到总览':'下一步 →';
   $('panel').scrollTop=0;
   annotateTerms($('stage-body'));
+  if(state.stage===9)renderMetaUI();
 }
 function renderDots(){
   const box=$('dots'); box.innerHTML='';
@@ -1499,8 +1869,8 @@ function renderStrats(){
     b.onclick=()=>{
       state.strat[st.k]=!state.strat[st.k];
       if(st.k==='layer'){
-        if(state.strat.layer)flyCamera(V3(0,36,130),V3(0,10,0),1.6);
-        else flyCamera(V3(0,32,72),V3(0,8,-2),1.6);
+        if(state.strat.layer)flyCamera(V3(0,62,182),V3(0,10,0),1.6);
+        else flyCamera(V3(0,48,112),V3(0,8,-16),1.6);
       }
       applyState(); renderStrats();
     };
@@ -1558,10 +1928,15 @@ function setStage(n){
   state.revealed=n===3?0:TANGLES.length;
   renderPanel(); renderDots(); renderStrats();
   $('vignette').classList.toggle('danger',n===6);
+  $('meter').style.display=n===9?'none':'block'; // 树之树看的是生长顺序，不看熵
   syncRotateBtn();
 
-  // 引力强度随阶段推进（总览预告 + 引力阶段之后常驻）
-  const gTarget=(n===0||n>=4)?1:0;
+  // 树之树：进入即重新生长；离开即拆除（含 CSS2D 标签）
+  if(n===9){metaGroup.visible=true; buildMetaTree();}
+  else if(metaGroup.visible){metaGroup.visible=false; clearMeta();}
+
+  // 引力强度随阶段推进（总览预告 + 引力阶段之后常驻；树之树阶段回收）
+  const gTarget=(n===0||(n>=4&&n!==9))?1:0;
   if(Math.abs(gTarget-gravityPull)>.01){
     const g0=gravityPull;
     tween(1.6,k=>{gravityPull=g0+(gTarget-g0)*k;linkDirty=true;},()=>{linkDirty=true;refreshNodes();});
@@ -1571,7 +1946,7 @@ function setStage(n){
   if(n===6){
     applyState(); buildCollapse();
     const fp=nodesById.get(FOCUS_ID).mesh.getWorldPosition(new THREE.Vector3());
-    camPos=fp.clone().add(V3(10,8,17)); camTgt=fp.clone().add(V3(-1,4,2));
+    camPos=fp.clone().add(V3(15,11,26)); camTgt=fp.clone().add(V3(-2,4,0));
     flyCamera(camPos,camTgt,1.8);
   }else{
     clearCollapse(); applyState();
@@ -1582,7 +1957,7 @@ function setStage(n){
   // 每切一步 = 一棵新的视口历史树，根 = 本步的起始视角
   vpReset(camPos,camTgt,STAGES[n].chip.split('·').pop().trim());
 
-  if(n===3){ // 逐条揭示偶然交织
+  if(n===3){ // 逐条揭示偶然交织（59 条，快节奏揭示）
     revealTimer=setInterval(()=>{
       state.revealed++;
       const t=TANGLES[state.revealed-1];
@@ -1600,7 +1975,7 @@ function setStage(n){
           annotateTerms($('case-box'));
         },4500);
       }
-    },800);
+    },420);
   }
 }
 
@@ -1687,7 +2062,9 @@ function doHover(){
     return;
   }
   raycaster.setFromCamera(pointer,camera);
-  const nodeMeshes=allNodes.map(n=>n.mesh).concat(Object.values(platNodes));
+  const metaMode=state.stage===9;
+  const nodeMeshes=metaMode?[]:allNodes.map(n=>n.mesh).concat(Object.values(platNodes));
+  const metaOrbs=metaMode?metaItems.map(m=>m.orb).filter(o=>o.visible):[];
   const beamsG=GRAVITY.map(g=>g.beam).filter(b=>b.visible);
   const ghostHit=[];
   for(const g of GHOSTS)if(g.wire.visible){
@@ -1695,7 +2072,7 @@ function doHover(){
     for(const l of g.dashed)if(l.visible)ghostHit.push(l);
     for(const l of g.solid)if(l.visible)ghostHit.push(l);
   }
-  const hits=raycaster.intersectObjects(nodeMeshes.concat(rayTubes,beamsG,ghostHit),false);
+  const hits=raycaster.intersectObjects(nodeMeshes.concat(rayTubes,beamsG,ghostHit,metaOrbs),false);
   let target=null;
   if(hits.length)target=hits[0].object;
   if(hovered&&hovered!==target){
@@ -1705,12 +2082,15 @@ function doHover(){
   }
   if(target&&target!==hovered){
     hovered=target;
-    const n=target.userData.node, t=target.userData.tangle, gv=target.userData.gravity, gh=target.userData.ghost;
+    const n=target.userData.node, t=target.userData.tangle, gv=target.userData.gravity, gh=target.userData.ghost, mt=target.userData.meta;
     if(n){
       if(n.mat)n.mat.emissiveIntensity=1.0;
       tooltip.innerHTML=n.platform
         ?`<b>${n.name}</b><span class="tt-kind">平台树 · 横切关注点的显式归属</span>`
         :nodeTooltip(n);
+      tooltip.style.display='block';
+    }else if(mt){
+      tooltip.innerHTML=metaTooltip(mt);
       tooltip.style.display='block';
     }else if(t){
       tooltip.innerHTML=tangleTooltip(t);
@@ -1977,6 +2357,7 @@ function animate(){
   stepTweens();
   updateGravity(t);
   updateGhosts(t);
+  updateMeta(t);
   if(linkDirty){rebuildTangles();linkDirty=false;}
   controls.update();
 
