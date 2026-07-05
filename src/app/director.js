@@ -1,10 +1,13 @@
 // 导演:叙事推进的总调度。setStage 是唯一入口——
-// 重置策略开关、重建场景状态、飞相机、重置视口历史、驱动 STEP 3 的案例揭示与轮播。
+// 重置策略开关、重建场景状态、飞相机、重置视口历史、
+// 驱动 STEP 3 的案例揭示与 STEP 4 的引力对点名轮播、STEP 8 的法则现场聚光。
 
 import * as THREE from 'three';
 import { FOCUS_ID } from '../config.js';
 import { STAGES } from '../story/stages.js';
+import { LAWS } from '../story/laws.js';
 import { TANGLES } from '../data/tangles.js';
+import { GRAVITY, GRAVITY_KINDS } from '../data/gravity.js';
 import { state, stratOn, runtime } from '../core/state.js';
 import { tween } from '../core/tween.js';
 import { V3 } from '../core/three-utils.js';
@@ -17,7 +20,7 @@ import { platformGroup, platLabelObj } from '../scene/platform.js';
 import { buildCollapse, clearCollapse } from '../scene/collapse.js';
 import { metaGroup, buildMetaTree, clearMeta } from '../scene/meta-tree.js';
 import { $ } from '../ui/dom.js';
-import { initPanel, renderPanel, renderStrats, setCaseBox, updateStats, renderMetaUI } from '../ui/panel.js';
+import { initPanel, renderPanel, renderStrats, setCaseBox, updateStats, renderMetaUI, renderLaws, renderGravList } from '../ui/panel.js';
 import { initDots, renderDots } from '../ui/dots.js';
 import { updateEntropy, setMeterVisible } from '../ui/entropy-meter.js';
 import { initRotateToggle, renderRotateToggle } from '../ui/rotate-toggle.js';
@@ -26,7 +29,7 @@ import { vpReset, vpDepth } from './viewport-history.js';
 let revealTimer = null, cycleTimer = null;
 let platformWasVisible = false;
 
-/* STEP 3 的揭示/轮播计时器是否在跑(主循环据此保持渲染) */
+/* STEP 3/4 的揭示/轮播计时器是否在跑(主循环据此保持渲染) */
 export const timersActive = () => !!(revealTimer || cycleTimer);
 
 /* 把策略开关与阶段应用到全场景 */
@@ -53,6 +56,26 @@ function cancelTimers() {
   if (revealTimer) { clearInterval(revealTimer); revealTimer = null; }
   if (cycleTimer) { clearInterval(cycleTimer); cycleTimer = null; }
   runtime.highlightTangle = -1;
+  runtime.highlightGravity = -1;
+}
+
+/* STEP 4:案例栏点名一对引力(场景里对应光束增亮、节点呼吸、中点浮出标签),列表同步高亮 */
+function showGravityCase(i) {
+  runtime.highlightGravity = i;
+  const g = GRAVITY[i];
+  setCaseBox(`<b>引力对 ${i + 1}/${GRAVITY.length}</b>　${g.aName} ⚡ ${g.bName}` +
+    `<span class="gkind">${GRAVITY_KINDS[g.kind]}</span><br>${g.why}`);
+  renderGravList();
+}
+
+/* 点击列表某一对:立即点名,并从这一对起重新轮播 */
+function pickGravityCase(i) {
+  if (state.stage !== 4) return;
+  if (cycleTimer) clearInterval(cycleTimer);
+  let gi = i;
+  showGravityCase(i);
+  cycleTimer = setInterval(() => { gi = (gi + 1) % GRAVITY.length; showGravityCase(gi); }, 5200);
+  wake(2800);
 }
 
 // 自动旋转 = 用户意图 × 当前步骤(仅总览自动旋转;用户可随时暂停/恢复,意图跨步骤保留)
@@ -67,6 +90,7 @@ export function setStage(n) {
   cancelTimers();
   wake(2800);          // 换步会触发飞行/形变/熵值动画,唤醒足够时长让其收敛
   state.stage = n;
+  runtime.lawFocus = ''; runtime.lawFocusUntil = 0; // STEP 8 的法则聚光不跨步骤保留
   // 手术开关 = 当前步骤的纯函数:仅第 8 步(终态)全开,其余步骤(含刚进入的第 7 步)一律清零。
   // 于是无论从哪个方向进入某一步,其状态都可复现——从第 8 步 ← 退回第 7 步会回到干净的可操作起点,
   // 不会残留「全开」,避免「进入后续状态后就退不回之前状态」的单向性。
@@ -121,6 +145,31 @@ export function setStage(n) {
       }
     }, 420);
   }
+
+  if (n === 4) { // 引力对逐一点名轮播(相机不动,场景里对应光束增亮)
+    let gi = 0;
+    showGravityCase(0);
+    cycleTimer = setInterval(() => { gi = (gi + 1) % GRAVITY.length; showGravityCase(gi); }, 5200);
+  }
+}
+
+/* STEP 8:点击法则卡片 → 镜头飞到该法则的活现场,现场元素聚光脉冲若干秒;再点一次收回全景。
+   脉冲有截止时间:到期后场景自动安定下来,渲染循环照常休眠(空闲零 CPU 的原则不破)。 */
+export function focusLaw(k) {
+  if (state.stage !== 8) return;
+  const law = LAWS.find(l => l.k === k);
+  if (!law || runtime.lawFocus === k) { // 再点当前卡片:回到全景
+    runtime.lawFocus = ''; runtime.lawFocusUntil = 0;
+    const c = STAGES[8].cam;
+    flyCamera(V3(...c[0]), V3(...c[1]), 1.4);
+    wake(2200);
+  } else {
+    runtime.lawFocus = k;
+    runtime.lawFocusUntil = performance.now() + 6500;
+    flyCamera(V3(...law.cam[0]), V3(...law.cam[1]), 1.4);
+    wake(7200); // 比脉冲多留一点:让聚光元素在最后一帧安定复位
+  }
+  renderLaws();
 }
 
 export const nextStage = () => setStage((state.stage + 1) % STAGES.length);
@@ -140,6 +189,8 @@ export function initDirector() {
       }
       applyState(); renderStrats();
     },
+    onGravPick: pickGravityCase,
+    onLaw: focusLaw,
     onMetaPath: i => { runtime.metaPathIdx = i; buildMetaTree(); renderMetaUI(); },
   });
   initDots(setStage);
