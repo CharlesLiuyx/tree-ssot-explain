@@ -146,15 +146,22 @@
   #vp-back:active{transform:translateX(-50%) scale(.95)}
   #vp-back .kbd,#vp-map .kbd{font-size:10px;color:var(--sub);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
 
+  #vp-pill{position:fixed;right:18px;top:188px;z-index:10;display:none;align-items:center;gap:7px;
+    cursor:pointer;background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--line);border-radius:99px;padding:8px 14px;color:var(--txt);
+    font-family:inherit;font-size:12.5px;font-weight:600;box-shadow:0 12px 40px rgba(0,0,0,.45);transition:border-color .2s}
+  #vp-pill:hover{border-color:rgba(255,209,102,.5)}
+  #vp-pill .n{font-size:10.5px;color:var(--gold);border:1px solid rgba(255,209,102,.35);border-radius:99px;padding:1px 7px}
+
   #vp-panel{position:fixed;right:18px;top:188px;z-index:10;width:252px;display:none;
     max-height:calc(100vh - 372px);overflow-y:auto;
     background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
     border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 12px 40px rgba(0,0,0,.45)}
   #vp-panel::-webkit-scrollbar{width:6px}
   #vp-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:3px}
-  #vp-panel .vp-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:9px}
+  #vp-panel .vp-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:7px}
   #vp-panel .vp-head .vp-title{font-size:11px;color:var(--sub);letter-spacing:.14em;white-space:nowrap}
-  #vp-panel .vp-acts{display:flex;gap:5px}
+  #vp-panel .vp-acts{display:flex;gap:5px;margin-bottom:9px}
   #vp-panel .vp-act{cursor:pointer;font-size:11.5px;color:var(--gold);border:1px solid rgba(255,209,102,.35);
     border-radius:99px;padding:2px 9px;transition:filter .15s;white-space:nowrap}
   #vp-panel .vp-act:hover{filter:brightness(1.2)}
@@ -273,13 +280,17 @@
 
 <button id="vp-back" type="button" title="返回上一个视口（快捷键 Esc）">← 返回上一步 <span class="kbd">Esc</span></button>
 
+<button id="vp-pill" type="button" title="展开「视口历史」面板（导航树 + 节点详情）">视口历史 <span class="n" id="vp-pill-n"></span></button>
+
 <aside id="vp-panel">
   <div class="vp-head">
     <span class="vp-title">视口历史</span>
-    <span class="vp-acts">
-      <span class="vp-act" id="vp-map-btn" title="查看视口历史全景（快捷键 V）">⛶ 全景</span>
-      <span class="vp-act" id="vp-home" title="回到本步的起始视角">⌂ 起始视角</span>
-    </span>
+    <span class="vp-act" id="vp-collapse" title="收起为胶囊（历史保留）">— 收起</span>
+  </div>
+  <div class="vp-acts">
+    <span class="vp-act" id="vp-map-btn" title="查看视口历史全景（快捷键 V）">⛶ 全景</span>
+    <span class="vp-act" id="vp-home" title="回到本步的起始视角">⌂ 起始视角</span>
+    <span class="vp-act" id="vp-clear" title="清空本步视口历史（只保留起始视角并飞回）">⌫ 清空</span>
   </div>
   <div id="vp-detail"></div>
   <div class="vp-sub" id="vp-sub">导航树（点击任意节点跳转）</div>
@@ -291,6 +302,7 @@
     <div class="vpm-head">
       <span class="vpm-title">视口历史 · 全景</span>
       <span class="vpm-stats" id="vpm-stats"></span>
+      <button class="vpm-close" id="vpm-clear" type="button" title="清空本步视口历史（只保留起始视角并飞回）">⌫ 清空</button>
       <button class="vpm-close" id="vpm-close" type="button">✕ 关闭 <span class="kbd">Esc</span></button>
     </div>
     <div class="vpm-body" id="vpm-body"></div>
@@ -1609,7 +1621,7 @@ let overUI=false;
 addEventListener('pointermove',e=>{
   pointer.x=(e.clientX/innerWidth)*2-1;
   pointer.y=-(e.clientY/innerHeight)*2+1;
-  overUI=!!(e.target&&e.target.closest&&e.target.closest('#panel,#topbar,#meter,#legend,#dots,#rotate-toggle,#vp-panel,#vp-back,#vp-map'));
+  overUI=!!(e.target&&e.target.closest&&e.target.closest('#panel,#topbar,#meter,#legend,#dots,#rotate-toggle,#vp-panel,#vp-back,#vp-map,#vp-pill'));
   tooltip.style.left=Math.min(e.clientX+16,innerWidth-350)+'px';
   tooltip.style.top=Math.min(e.clientY+16,innerHeight-200)+'px';
 });
@@ -1725,6 +1737,7 @@ const FAST_DUR=0.12;               // 动效在 120ms 内完成，快而爽快
 const VP_MAX=30;                   // 视口总数上限，超过即触发 GC
 const pickV=new THREE.Vector2();
 let vpRoot=null, vpCurrent=null, vpSeq=0, vpGCCount=0;
+let vpPanelOpen=false;             // 「视口历史」面板默认收起为胶囊；展开/收起是用户意图，跨步骤保留
 
 function makeVP(pos,target,label,meta){
   return {id:++vpSeq, pos:pos.clone(), target:target.clone(), label, meta:meta||{},
@@ -1770,6 +1783,18 @@ function vpGC(){
     victim.parent=null;
     vpGCCount++; total--;
   }
+}
+
+// 手动清空：丢弃全部历史、只留根（本步起始视角），并飞回根
+function vpClear(){
+  if(!vpRoot)return;
+  vpRoot.children.length=0;
+  vpSeq=1; vpGCCount=0;            // 根保持 #1，下一次 Zoom in 从 #2 重新编号
+  vpCurrent=vpRoot;
+  vpRoot.at=performance.now();
+  flyCamera(vpRoot.pos.clone(),vpRoot.target.clone(),FAST_DUR,easeOut);
+  renderVPTree();
+  if(vpMapOn)renderVpMap();
 }
 
 function zoomToNode(mesh){
@@ -1823,9 +1848,11 @@ function nodeDetailHTML(n){
 function renderVPTree(){
   const depth=vpDepth();
   $('vp-back').style.display=depth>0?'inline-flex':'none';
-  const panel=$('vp-panel');
-  const show=!!(vpRoot&&vpRoot.children.length);   // 至少 Zoom in 过一次才出现
-  panel.style.display=show?'block':'none';
+  const has=!!(vpRoot&&vpRoot.children.length);    // 至少 Zoom in 过一次才有历史
+  const show=has&&vpPanelOpen;                     // 默认收起：有历史时先只给一颗胶囊
+  $('vp-panel').style.display=show?'block':'none';
+  $('vp-pill').style.display=has&&!vpPanelOpen?'inline-flex':'none';
+  if(has)$('vp-pill-n').textContent=vpCount(vpRoot);
   if(show){
     const det=$('vp-detail'), m=vpCurrent&&vpCurrent.meta;
     if(m&&m.kind==='node'&&m.node){ det.innerHTML=nodeDetailHTML(m.node); annotateTerms(det); }
@@ -1894,6 +1921,10 @@ function closeVpMap(){ if(!vpMapOn)return; vpMapOn=false; $('vp-map').classList.
 
 $('vp-back').onclick=vpBack;
 $('vp-home').onclick=()=>vpNavigate(vpRoot);
+$('vp-pill').onclick=()=>{ vpPanelOpen=true; renderVPTree(); };
+$('vp-collapse').onclick=()=>{ vpPanelOpen=false; renderVPTree(); };
+$('vp-clear').onclick=vpClear;
+$('vpm-clear').onclick=vpClear;
 $('vp-map-btn').onclick=openVpMap;
 $('vpm-close').onclick=closeVpMap;
 $('vp-map').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeVpMap(); }); // 点背板关闭
@@ -1904,7 +1935,7 @@ addEventListener('keydown',e=>{
 // 调试 / 自动化测试钩子（编程式导航 + 只读统计）
 window.__vp={
   zoomTo:gid=>{ const n=nodesById.get(gid); if(n)zoomToNode(n.mesh); },
-  back:vpBack, home:()=>vpNavigate(vpRoot), depth:vpDepth,
+  back:vpBack, home:()=>vpNavigate(vpRoot), clear:vpClear, depth:vpDepth,
   count:()=>vpCount(vpRoot), gc:()=>vpGCCount, gids:()=>[...nodesById.keys()],
 };
 
