@@ -163,7 +163,7 @@ export function updateStats() {
   annotateTerms(el);
 }
 
-/* STEP 9:两条演化路径的切换按钮 + 生长速度滑杆 + 骨骼/假肢总结(容器在 stage 9 文案里) */
+/* STEP 9:演化路径切换按钮(四条) + 生长速度滑杆 + 骨骼/假肢总结(容器在 stage 9 文案里) */
 export function renderMetaUI() {
   const box = $('meta-paths'); if (!box) return;
   box.innerHTML = '';
