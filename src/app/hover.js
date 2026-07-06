@@ -27,8 +27,9 @@ export function initHover() {
     pointer.x = (e.clientX / innerWidth) * 2 - 1;
     pointer.y = -(e.clientY / innerHeight) * 2 + 1;
     pointerMoved = true;
-    if (e.buttons) smoothWake(); else wake(500);   // 拖拽 → 满帧;仅移动 → 唤醒一小段以更新悬停
     overUI = !!(e.target && e.target.closest && e.target.closest('#panel,#topbar,#meter,#legend,#dots,#rotate-toggle,#vp-panel,#vp-back,#vp-map,#vp-pill'));
+    // 拖拽 → 满帧;场景内移动 → 唤醒一小段以更新悬停;在 UI 面板上滚动/阅读 → 只给几帧清掉旧悬停,不空转渲染
+    if (e.buttons) smoothWake(); else wake(overUI ? 160 : 500);
   });
 }
 

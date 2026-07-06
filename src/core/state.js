@@ -21,6 +21,9 @@ export function stratOn(k) { return state.strat[k] && state.stage >= 7; }
    highlightTangle  STEP 3 正在高亮的案例序号:导演 → 主循环
    highlightGravity STEP 4 案例栏正在点名的引力对序号:导演 → 引力系统(光束增亮/节点呼吸)
    tangleCounts     纠缠线分类计数:纠缠系统 → 策略统计栏
+   casePlaying      STEP 3 揭示是否在自动播放(必须点击 ▶ 才开始):导演 → 面板播放按钮
+   gravCycling      STEP 4 引力点名是否在轮播(必须点击 ▶ 才开始):导演 → 面板播放按钮
+   metaPlaying      STEP 9 树之树是否在生长(必须点击 ▶ 才开始;长完自动置回 false):导演/面板 → 树之树/主循环
    metaPathIdx      STEP 9 当前演化路径:路径切换 → 树之树/面板
    metaSpeed        STEP 9 生长速度倍率(面板滑杆可调):面板 → 树之树 */
 export const runtime = {
@@ -31,6 +34,9 @@ export const runtime = {
   highlightTangle: -1,
   highlightGravity: -1,
   tangleCounts: { red: 0, amber: 0, grey: 0, plat: 0 },
+  casePlaying: false,
+  gravCycling: false,
+  metaPlaying: false,
   metaPathIdx: 0,
   metaSpeed: 1,
   lawFocus: '',      // STEP 8 当前选中的法则 k(空 = 全景视角)

@@ -1,5 +1,6 @@
-// 叙事面板组件:步骤文案 / STEP 3-4 案例栏(STEP 3 带播放进度条) / STEP 4 引力对分组列表 /
-// STEP 7-8 策略开关与统计 / STEP 8 法则卡片 / STEP 9 演化路径与生长速度 / 上下步导航。
+// 叙事面板组件:步骤文案 / STEP 3-4 案例栏(带 ▶ 播放按钮,STEP 3 另有进度条) / STEP 4 引力对分组列表 /
+// STEP 7-8 策略开关与统计 / STEP 8 法则卡片 / STEP 9 演化路径与 ▶ 生长/速度控制 / 上下步导航。
+// 所有自动播放(揭示/轮播/生长)都必须点击 ▶ 才开始——进场只渲染静止态与待播提示。
 // 行为回调(切步/开关策略/拖案例进度/点引力对/点法则/切路径)由 app/director.js 装配时注入——组件只管渲染。
 
 import { mount, $ } from './dom.js';
@@ -20,6 +21,7 @@ mount(`
   <div id="stage-body"></div>
   <div id="case-box"></div>
   <div id="case-ctrl">
+    <button id="case-play"></button>
     <input id="case-range" type="range" min="0" value="0" step="1" title="拖动:播放到第几条">
     <span id="case-count"></span>
     <button id="case-all" title="一次点亮全部交织,不再轮播">⚡ 全展示</button>
@@ -34,11 +36,12 @@ mount(`
   </div>
 </aside>`);
 
-let handlers = {}; // {onPrev,onNext,onStratToggle,onCaseScrub,onGravPick,onLaw,onMetaPath}
+let handlers = {}; // {onPrev,onNext,onStratToggle,onCaseScrub,onCasePlay,onGravPick,onLaw,onMetaPath,onMetaPlay}
 export function initPanel(h) {
   handlers = h;
   $('prev').onclick = () => handlers.onPrev();
   $('next').onclick = () => handlers.onNext();
+  $('case-play').onclick = () => handlers.onCasePlay(); // STEP 3 播放揭示 / STEP 4 轮播点名
   $('case-range').max = TANGLES.length;
   $('case-range').oninput = e => handlers.onCaseScrub(+e.target.value);
   $('case-all').onclick = () => handlers.onCaseScrub(TANGLES.length);
@@ -46,20 +49,21 @@ export function initPanel(h) {
 
 export function renderPanel() {
   const s = STAGES[state.stage];
-  // 案例栏是常驻元素,可被临时移进正文槽位(STEP 4)——重建正文前必须先归位,否则会被 innerHTML 抹掉
-  const cb = $('case-box');
-  if (cb.parentElement !== $('panel')) $('panel').insertBefore(cb, $('case-ctrl'));
+  // 案例栏与播放控制是常驻元素,可被临时移进正文槽位(STEP 4)——重建正文前必须先归位,否则会被 innerHTML 抹掉
+  const cb = $('case-box'), cc = $('case-ctrl');
+  if (cc.parentElement !== $('panel')) $('panel').insertBefore(cc, $('strategies'));
+  if (cb.parentElement !== $('panel')) $('panel').insertBefore(cb, cc);
   $('stage-chip').textContent = s.chip;
   $('stage-title').textContent = s.title;
   $('stage-body').innerHTML = s.body;
   const caseOn = state.stage === 3 || state.stage === 4;
   cb.style.display = caseOn ? 'block' : 'none';
-  cb.classList.toggle('mg', state.stage === 4); // 引力阶段:案例栏转洋红
-  if (state.stage === 3) cb.innerHTML = '<span class="dim">纠缠正在产生……</span>';
-  $('case-ctrl').style.display = state.stage === 3 ? 'flex' : 'none'; // 播放进度条只属于交织阶段
-  if (state.stage === 3) renderCaseCtrl();
+  cb.classList.toggle('mg', state.stage === 4); // 引力阶段:案例栏与播放钮转洋红
+  cc.classList.toggle('mg', state.stage === 4);
+  cc.style.display = caseOn ? 'flex' : 'none';  // 播放控制属于两个可播放阶段(3 揭示 / 4 轮播)
+  if (caseOn) renderCaseCtrl();
   const slot = $('grav-case-slot');
-  if (slot) slot.appendChild(cb); // STEP 4:案例栏上移到开篇段落之后,不必滚动就能看到点名
+  if (slot) { slot.appendChild(cb); slot.appendChild(cc); } // STEP 4:案例栏与 ▶ 上移到开篇段落之后,不必滚动就能看到点名
   $('strategies').style.display = (state.stage >= 7 && state.stage <= 8) ? 'block' : 'none';
   $('prev').style.visibility = state.stage === 0 ? 'hidden' : 'visible';
   $('next').textContent = state.stage === STAGES.length - 1 ? '↺ 回到总览' : '下一步 →';
@@ -136,11 +140,24 @@ export function setCaseBox(html) {
   annotateTerms($('case-box'));
 }
 
-/* STEP 3:播放进度条与计数跟随揭示进度(自动播放推着走,手也能随时拽走) */
+/* STEP 3/4 播放控制:▶ 按钮双阶段共用(3 = 逐条揭示,4 = 点名轮播),必须点击才开始播放;
+   进度条/计数/全展示只属于 STEP 3。 */
 export function renderCaseCtrl() {
-  $('case-range').value = state.revealed;
-  $('case-count').textContent = `${state.revealed}/${TANGLES.length}`;
-  $('case-all').disabled = state.revealed >= TANGLES.length;
+  const s3 = state.stage === 3;
+  for (const id of ['case-range', 'case-count', 'case-all']) $(id).style.display = s3 ? '' : 'none';
+  const play = $('case-play');
+  if (s3) {
+    $('case-range').value = state.revealed;
+    $('case-count').textContent = `${state.revealed}/${TANGLES.length}`;
+    $('case-all').disabled = state.revealed >= TANGLES.length;
+    play.textContent = runtime.casePlaying ? '⏸ 暂停'
+      : state.revealed >= TANGLES.length ? '▶ 重播'
+      : state.revealed > 0 ? '▶ 继续' : '▶ 播放';
+    play.title = '逐条揭示纠缠案例(点击才开始播放)';
+  } else {
+    play.textContent = runtime.gravCycling ? '⏸ 停止轮播' : '▶ 轮播点名';
+    play.title = '每 5 秒点名一对引力(点击才开始轮播)';
+  }
 }
 
 /* STEP 7-8:纠缠线分类统计(纠缠线每次重建后由装配好的回调刷新)。
@@ -170,20 +187,24 @@ export function renderMetaUI() {
   META_PATHS.forEach((p, i) => {
     const b = document.createElement('button');
     b.className = 'strat' + (i === runtime.metaPathIdx ? ' on' : '');
-    b.innerHTML = `<span class="s-name">${p.name}<em>${p.pct}</em></span><span class="s-desc"><b style="color:#dfe6f3">${p.proto}</b> —— ${p.desc}</span>`;
+    b.innerHTML = `<span class="s-name">${p.name}<em>${p.pct}</em></span>`;
+    b.title = `${p.proto} —— ${p.desc}`; // 原型与简介进悬停提示,完整版在下方骨骼/假肢总结里
     b.onclick = () => handlers.onMetaPath(i); // 点已选中的路径 = 重播生长
     box.appendChild(b);
   });
-  // 生长速度:滑杆实时调速(生长中途调也平滑),↻ 重播 = 以当前速度重新长一遍
+  // 播放/暂停 + 生长速度:生长必须点 ▶ 才开始;滑杆实时调速(生长中途调也平滑),↻ 重播 = 以当前速度重新长一遍
   const sp = document.createElement('div');
   sp.className = 'meta-speed';
-  sp.innerHTML = `<span>生长速度</span><input type="range" min="0.5" max="3" step="0.5" value="${runtime.metaSpeed}" title="拖动:调整树之树的生长速度"><b>${runtime.metaSpeed}×</b><button title="以当前速度重新生长">↻ 重播</button>`;
+  sp.innerHTML = `<button class="meta-play" title="开始 / 暂停生长（长完后再点 = 从头重播）">${runtime.metaPlaying ? '⏸ 暂停' : '▶ 生长'}</button>` +
+    `<span>生长速度</span><input type="range" min="0.5" max="3" step="0.5" value="${runtime.metaSpeed}" title="拖动:调整树之树的生长速度"><b>${runtime.metaSpeed}×</b>` +
+    `<button class="meta-replay" title="以当前速度重新生长">↻ 重播</button>`;
   const rng = sp.querySelector('input'), val = sp.querySelector('b');
   rng.oninput = () => { runtime.metaSpeed = +rng.value; val.textContent = runtime.metaSpeed + '×'; };
-  sp.querySelector('button').onclick = () => handlers.onMetaPath(runtime.metaPathIdx);
+  sp.querySelector('.meta-play').onclick = () => handlers.onMetaPlay();
+  sp.querySelector('.meta-replay').onclick = () => handlers.onMetaPath(runtime.metaPathIdx);
   box.appendChild(sp);
   const P = META_PATHS[runtime.metaPathIdx];
   $('meta-traits').innerHTML =
-    `<div class="quote"><b class="g">骨骼</b>：${P.strong}<br><b class="r">假肢</b>：${P.weak}<br><span class="dim">${P.law}</span></div>`;
+    `<div class="quote"><b style="color:#dfe6f3">${P.proto}</b> —— ${P.desc}<br><b class="g">骨骼</b>：${P.strong}<br><b class="r">假肢</b>：${P.weak}<br><span class="dim">${P.law}</span></div>`;
   annotateTerms(box); annotateTerms($('meta-traits'));
 }

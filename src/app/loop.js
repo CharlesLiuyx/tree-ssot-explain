@@ -12,7 +12,7 @@ import { updatePools } from '../scene/pools.js';
 import { updateGravity } from '../scene/gravity.js';
 import { updateGhosts } from '../scene/ghosts.js';
 import { updateLawFx } from '../scene/law-fx.js';
-import { updateMeta, metaGroup } from '../scene/meta-tree.js';
+import { updateMeta, metaActive } from '../scene/meta-tree.js';
 import { rebuildTangles, updateTangleHighlight } from '../scene/tangles.js';
 import { updateCollapse } from '../scene/collapse.js';
 import { radar } from '../scene/strategies-fx.js';
@@ -30,9 +30,10 @@ function adaptQuality() {
     if (degradeQuality()) _workMs = 4;
   }
 }
-// 场景是否需要继续渲染:自转 / 动画补间 / 近期交互 / stage3 揭示轮播 / stage9 生长——都不满足则静止停渲染。
+// 场景是否需要继续渲染:自转 / 动画补间 / 近期交互 / stage3-4 播放计时器 / stage9 正在生长——
+// 都不满足则静止停渲染。所有自动播放均需点击才开始,故页面默认态就是零渲染。
 function sceneActive(now) {
-  return controls.autoRotate || tweens.size > 0 || now < wakeUntil() || timersActive() || metaGroup.visible;
+  return controls.autoRotate || tweens.size > 0 || now < wakeUntil() || timersActive() || metaActive();
 }
 
 function animate() {

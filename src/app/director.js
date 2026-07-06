@@ -1,6 +1,8 @@
 // 导演:叙事推进的总调度。setStage 是唯一入口——
 // 重置策略开关、重建场景状态、飞相机、重置视口历史、
-// 驱动 STEP 3 的案例揭示(可拖动接管/一键全展示)与 STEP 4 的引力对点名轮播、STEP 8 的法则现场聚光。
+// 驱动 STEP 3 的案例揭示(点 ▶ 播放/可拖动接管/一键全展示)、STEP 4 的引力对点名轮播(点 ▶ 开始)、
+// STEP 8 的法则现场聚光、STEP 9 的树之树生长(点 ▶ 开始)。
+// 原则:一切自动播放(含总览自转)都必须由用户点击开始——进场即静止,静止即休眠(零 CPU)。
 
 import * as THREE from 'three';
 import { FOCUS_ID, STAGE_DUR, MOVE_DUR } from '../config.js';
@@ -18,7 +20,7 @@ import { refreshNodes } from '../scene/appearance.js';
 import { applyTreePositions, gatesGroup, radar } from '../scene/strategies-fx.js';
 import { platformGroup, platLabelObj } from '../scene/platform.js';
 import { buildCollapse, clearCollapse } from '../scene/collapse.js';
-import { metaGroup, buildMetaTree, clearMeta } from '../scene/meta-tree.js';
+import { metaGroup, buildMetaTree, clearMeta, metaFinished, rewindMeta, setOnMetaDone } from '../scene/meta-tree.js';
 import { $ } from '../ui/dom.js';
 import { initPanel, renderPanel, renderStrats, setCaseBox, renderCaseCtrl, updateStats, renderMetaUI, renderLaws, renderGravList } from '../ui/panel.js';
 import { initDots, renderDots } from '../ui/dots.js';
@@ -55,18 +57,27 @@ export function applyState() {
 function cancelTimers() {
   if (revealTimer) { clearInterval(revealTimer); revealTimer = null; }
   if (cycleTimer) { clearInterval(cycleTimer); cycleTimer = null; }
+  runtime.casePlaying = false;
+  runtime.gravCycling = false;
+  runtime.metaPlaying = false; // 树之树生长同属自动播放,离开步骤即停
   runtime.highlightTangle = -1;
   runtime.highlightGravity = -1;
 }
 
-/* STEP 3:把揭示进度定格到第 n 条(0 = 尚未开始)。自动播放与手动拖动共用同一入口;
-   拉满(n = 59)即视为「全展示」——停止自动揭示,此后不再轮播。 */
+/* STEP 3 案例栏的待播文案(进场 / 拖回 0 时展示) */
+const caseIdleHTML = () =>
+  `<span class="dim">${TANGLES.length} 条真实纠缠待揭示——点 ▶ 逐条播放，拖动进度条定格任意一条，或「⚡ 全展示」一键点亮</span>`;
+
+/* STEP 3:把揭示进度定格到第 n 条(0 = 尚未开始)。播放与手动拖动共用同一入口;
+   拉满(n = 59)即视为「全展示」——停止播放,此后停格不再轮播。 */
 function applyReveal(n) {
   state.revealed = Math.max(0, Math.min(TANGLES.length, n));
   const full = state.revealed >= TANGLES.length;
   runtime.highlightTangle = full ? -1 : state.revealed - 1; // 全展示后画面安定,不再呼吸高亮
+  if (full && revealTimer) { clearInterval(revealTimer); revealTimer = null; }
+  if (full) runtime.casePlaying = false;
   if (state.revealed === 0) {
-    setCaseBox('<span class="dim">纠缠正在产生……</span>');
+    setCaseBox(caseIdleHTML());
   } else {
     const t = TANGLES[state.revealed - 1];
     setCaseBox(`<b>案例 ${state.revealed}/${TANGLES.length}</b>　${t.aName} ↔ ${t.bName}<br>${t.why}` +
@@ -74,15 +85,32 @@ function applyReveal(n) {
   }
   refreshTangleFlags(); rebuildTangles(); refreshNodes(); updateEntropy();
   renderCaseCtrl();
-  if (full && revealTimer) { clearInterval(revealTimer); revealTimer = null; }
 }
 
 /* 手动拖动进度条 / 点「全展示」:接管播放(自动揭示停止),定格到第 n 条 */
 function scrubCases(n) {
   if (state.stage !== 3) return;
   if (revealTimer) { clearInterval(revealTimer); revealTimer = null; }
+  runtime.casePlaying = false;
   applyReveal(n);
   wake(900);
+}
+
+/* STEP 3:▶ 播放 / ⏸ 暂停逐条揭示——进场不自动播,必须点击才开始;全展示后再点 = 从头重播 */
+function toggleReveal() {
+  if (state.stage !== 3) return;
+  if (revealTimer) {
+    clearInterval(revealTimer); revealTimer = null;
+    runtime.casePlaying = false;
+    renderCaseCtrl();
+    wake(300);
+    return;
+  }
+  runtime.casePlaying = true;
+  if (state.revealed >= TANGLES.length) state.revealed = 0; // 重播:从头
+  applyReveal(state.revealed + 1);                          // 点击立即揭示下一条,不等首个 tick
+  if (state.revealed < TANGLES.length)                      // 点播恰好到最后一条:applyReveal 已停播
+    revealTimer = setInterval(() => applyReveal(state.revealed + 1), 420);
 }
 
 /* STEP 4:案例栏点名一对引力(场景里对应光束增亮、节点呼吸、中点浮出标签),列表同步高亮 */
@@ -94,18 +122,41 @@ function showGravityCase(i) {
   renderGravList();
 }
 
-/* 点击列表某一对:立即点名,并从这一对起重新轮播 */
-function pickGravityCase(i) {
-  if (state.stage !== 4) return;
+/* 从第 from 对起开始轮播(每 5.2s 换下一对) */
+function startGravCycle(from) {
   if (cycleTimer) clearInterval(cycleTimer);
-  let gi = i;
-  showGravityCase(i);
+  let gi = from;
+  showGravityCase(gi);
   cycleTimer = setInterval(() => { gi = (gi + 1) % GRAVITY.length; showGravityCase(gi); }, 5200);
+  runtime.gravCycling = true;
+}
+
+/* STEP 4:▶ 开始 / ⏸ 停止点名轮播——进场不自动轮播,必须点击才开始 */
+function toggleGravCycle() {
+  if (state.stage !== 4) return;
+  if (cycleTimer) {
+    clearInterval(cycleTimer); cycleTimer = null;
+    runtime.gravCycling = false;
+    renderCaseCtrl();
+    wake(300);
+    return;
+  }
+  startGravCycle(Math.max(0, runtime.highlightGravity)); // 从当前点名的一对继续,未点过名则从头
+  renderCaseCtrl();
   wake(2800);
 }
 
-// 自动旋转 = 用户意图 × 当前步骤(仅总览自动旋转;用户可随时暂停/恢复,意图跨步骤保留)
-let autoRotateWanted = true;
+/* 点击列表某一对:立即点名。轮播中 = 从这一对起继续轮播;未轮播 = 只定格这一对(不偷偷开播) */
+function pickGravityCase(i) {
+  if (state.stage !== 4) return;
+  if (cycleTimer) startGravCycle(i);
+  else showGravityCase(i);
+  wake(2800);
+}
+
+// 自动旋转 = 用户意图 × 当前步骤(仅总览自动旋转;用户可随时开启/暂停,意图跨步骤保留)。
+// 默认关闭:自转也是自动播放,必须点击(左下角按钮 / Space)才开始——页面打开即静止、零渲染。
+let autoRotateWanted = false;
 export function syncRotate() {
   controls.autoRotate = autoRotateWanted && state.stage === 0 && vpDepth() === 0; // Zoom in 聚焦时不自转
   renderRotateToggle({ visible: state.stage === 0, wanted: autoRotateWanted });
@@ -154,15 +205,9 @@ export function setStage(n) {
   // 每切一步 = 一棵新的视口历史树,根 = 本步的起始视角
   vpReset(camPos, camTgt, STAGES[n].chip.split('·').pop().trim());
 
-  if (n === 3) { // 逐条揭示偶然交织(59 条,快节奏揭示;进度条可随时拖动接管,揭示完毕停格不轮播)
-    revealTimer = setInterval(() => applyReveal(state.revealed + 1), 420);
-  }
-
-  if (n === 4) { // 引力对逐一点名轮播(相机不动,场景里对应光束增亮)
-    let gi = 0;
-    showGravityCase(0);
-    cycleTimer = setInterval(() => { gi = (gi + 1) % GRAVITY.length; showGravityCase(gi); }, 5200);
-  }
+  // STEP 3/4 进场一律静止待播:揭示/轮播都等用户点 ▶ 才开始(toggleReveal / toggleGravCycle)
+  if (n === 3) setCaseBox(caseIdleHTML());
+  if (n === 4) setCaseBox(`<span class="dim">${GRAVITY.length} 对本征耦合待点名——点 ▶ 开始轮播，或直接点击下方列表任意一对</span>`);
 }
 
 /* STEP 8:点击法则卡片 → 镜头飞到该法则的活现场,现场元素聚光脉冲若干秒;再点一次收回全景。
@@ -184,12 +229,26 @@ export function focusLaw(k) {
   renderLaws();
 }
 
+/* STEP 9:▶ 开始 / ⏸ 暂停树之树生长——进场静止在起点,必须点击才开始;长完再点 = 从头重播 */
+function toggleMetaGrowth() {
+  if (state.stage !== 9) return;
+  if (runtime.metaPlaying) {
+    runtime.metaPlaying = false;
+    wake(200); // 渲染一帧定格画面
+  } else {
+    if (metaFinished()) rewindMeta();
+    runtime.metaPlaying = true;   // 主循环靠 metaActive() 保持渲染,长完自动停播休眠
+  }
+  renderMetaUI();
+}
+
 export const nextStage = () => setStage((state.stage + 1) % STAGES.length);
 export const prevStage = () => setStage(Math.max(0, state.stage - 1));
 
 /* 装配 UI 回调与纠缠重建后的统计刷新 */
 export function initDirector() {
   setOnTanglesRebuilt(updateStats);
+  setOnMetaDone(renderMetaUI); // 生长播放完毕:面板按钮复位为 ▶(场景随之休眠)
   initPanel({
     onPrev: prevStage,
     onNext: nextStage,
@@ -203,8 +262,10 @@ export function initDirector() {
     },
     onGravPick: pickGravityCase,
     onCaseScrub: scrubCases,
+    onCasePlay: () => state.stage === 3 ? toggleReveal() : toggleGravCycle(), // ▶ 按钮按阶段分发
     onLaw: focusLaw,
-    onMetaPath: i => { runtime.metaPathIdx = i; buildMetaTree(); renderMetaUI(); },
+    onMetaPath: i => { runtime.metaPathIdx = i; buildMetaTree(); runtime.metaPlaying = true; renderMetaUI(); }, // 切路径/重播由点击触发,即刻生长
+    onMetaPlay: toggleMetaGrowth,
   });
   initDots(setStage);
   initRotateToggle(toggleAutoRotate);

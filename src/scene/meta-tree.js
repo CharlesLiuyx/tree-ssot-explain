@@ -1,5 +1,7 @@
 // 树之树系统(STEP 9):每棵树坍缩成一个元节点,按「从谁的痛点里长出来」连成更大的树;
 // 金色序号 = 生长次序;虚线垂向下方森林里这棵树的真身。切路径(runtime.metaPathIdx)后重新生长。
+// 生长必须点击 ▶ 才开始(runtime.metaPlaying):进入本步时静止在 0,长完自动停(onMetaDone 通知面板),
+// 暂停/长完后场景可休眠(metaActive 供主循环判定)。
 // 生长速度可调(runtime.metaSpeed,面板滑杆):播放头按倍速逐帧累加,中途调速不跳变。
 
 import * as THREE from 'three';
@@ -17,8 +19,18 @@ export const metaGroup = new THREE.Group();
 metaGroup.position.copy(boundaryCenter); metaGroup.visible = false; scene.add(metaGroup);
 
 export let metaItems = [];
-let metaEl = 0; // 生长播放头(秒,1× 基准时间轴)
+let metaEl = 0;   // 生长播放头(秒,1× 基准时间轴)
+let metaEnd = 0;  // 全部长完的时刻(1× 基准;含最后一球冒出)
 const META_STEP = .36, META_GROW = .31; // 1× 基准节奏(默认即比旧版快一倍,更爽快;0.5× 可回到旧节奏)
+const META_TAIL = .6; // 长完后的收尾余量:让最后的标签/呼吸安定一拍再休眠
+
+let onMetaDone = null; // 生长播放完毕的回调(director 装配为面板播放按钮复位)
+export function setOnMetaDone(fn) { onMetaDone = fn; }
+
+/* 是否需要主循环持续渲染:仅「可见且正在生长」;暂停/长完即可休眠(空闲零 CPU) */
+export const metaActive = () => metaGroup.visible && runtime.metaPlaying;
+export const metaFinished = () => metaEl >= metaEnd;
+export function rewindMeta() { metaEl = 0; } // 重播:播放头归零(几何复用,不必重建)
 
 export function clearMeta() {
   disposeGroup(metaGroup); // Label 元素随 removed 事件自动摘除
@@ -72,13 +84,18 @@ export function buildMetaTree() {
     metaItems.push({ s, i, tr, orb, lab, edge, parentPos, pos, drop, rim, at: .18 + i * META_STEP });
   });
   metaEl = 0;
+  metaEnd = .18 + (P.seq.length - 1) * META_STEP + META_GROW + META_TAIL;
 }
 
 /* 每帧:按拓扑序逐个「长出」——先从父节点把枝长过来,长到了球再冒出来。
-   播放头按 runtime.metaSpeed 倍速累加(而非按绝对时刻换算),滑杆中途调速也平滑。 */
+   播放头只在 metaPlaying 时按 runtime.metaSpeed 倍速累加(而非按绝对时刻换算),滑杆中途调速也平滑;
+   长完自动停播并通知面板——此后场景休眠,悬停唤醒时静态帧照常渲染。 */
 export function updateMeta(t, dt) {
   if (!metaGroup.visible) return;
-  metaEl += dt * runtime.metaSpeed;
+  if (runtime.metaPlaying) {
+    metaEl += dt * runtime.metaSpeed;
+    if (metaEl >= metaEnd) { runtime.metaPlaying = false; onMetaDone && onMetaDone(); }
+  }
   const el = metaEl;
   for (const m of metaItems) {
     const k = Math.min(1, Math.max(0, (el - m.at) / META_GROW));
