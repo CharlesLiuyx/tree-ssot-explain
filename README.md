@@ -39,15 +39,15 @@
 
 ```bash
 # 源码版（零构建，原生 ES Module + importmap）：
-python3 -m http.server 4173   # 或 npm run serve
+python3 -m http.server 4173   # 或 pnpm run serve
 # 打开 http://127.0.0.1:4173/
 ```
 
 修改源码后重新生成内联版：
 
 ```bash
-npm install    # 仅首次：安装构建期依赖 esbuild（版本已锁定，无任何运行时依赖）
-npm run build  # 即 node build-embedded.mjs，产出 index-embedded.html
+pnpm install   # 仅首次：安装构建期依赖 esbuild（版本已锁定，无任何运行时依赖）
+pnpm run build # 即 node build-embedded.mjs，产出 index-embedded.html
 ```
 
 依赖清单（`vendor/`，three.js r160，来源 cdn.jsdelivr.net）：

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // 把模块化源码打包为单文件版本 index-embedded.html:
 // 内联全部 CSS(styles/)与 JS(src/ + vendor/ 的 three.js),零外部请求,可直接双击打开。
-// 用法:npm install 一次,之后 npm run build(或 node build-embedded.mjs)
+// 用法:pnpm install 一次,之后 pnpm run build(或 node build-embedded.mjs)
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -11,7 +11,7 @@ let esbuild;
 try {
   esbuild = await import('esbuild');
 } catch {
-  console.error('未找到 esbuild —— 请先运行 npm install(esbuild 已锁定在 package.json 的 devDependencies)');
+  console.error('未找到 esbuild —— 请先运行 pnpm install(esbuild 已锁定在 package.json 的 devDependencies)');
   process.exit(1);
 }
 
