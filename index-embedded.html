@@ -48,11 +48,22 @@ canvas{display:block}
 #topbar{position:fixed;top:0;left:0;right:0;z-index:10;pointer-events:none;
   padding:14px 22px;display:flex;justify-content:space-between;align-items:baseline;
   background:linear-gradient(180deg,rgba(6,8,13,.85),transparent)}
-#topbar h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.06em}
+#topbar h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.06em;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 #topbar h1 em{font-style:normal;color:var(--gold)}
+#topbar .author{color:var(--sub);font-size:12px;font-weight:500;letter-spacing:0;white-space:nowrap}
+#topbar .github-link{width:21px;height:21px;display:inline-flex;align-items:center;justify-content:center;
+  color:var(--sub);border:1px solid var(--line);border-radius:50%;pointer-events:auto;
+  transition:color .15s,border-color .15s,background .15s}
+#topbar .github-link:hover,#topbar .github-link:focus-visible{color:var(--txt);border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.08)}
+#topbar .github-link svg{width:14px;height:14px;display:block;fill:currentColor}
 #topbar .sub{color:var(--sub);font-size:12px;margin-top:2px}
 #topbar .keys{color:var(--sub);font-size:12px}
 #topbar .keys b{color:var(--txt);font-weight:600}
+
+@media (max-width: 860px){
+  #topbar{align-items:flex-start}
+  #topbar .keys{display:none}
+}
 
 /* === styles/panel.css === */
 /* 叙事面板:步骤文案 / 案例栏 / 策略开关 / 统计 / 上下步导航 */
@@ -348,7 +359,15 @@ window.addEventListener('unhandledrejection',function(e){
 (()=>{var Ee=i=>document.getElementById(i);function Mt(i){let e=document.createElement("template");e.innerHTML=i.trim();let t=e.content.firstElementChild;return document.body.appendChild(t),t}Mt(`
 <header id="topbar">
   <div>
-    <h1>\u591A\u6811\u5F62\u7ED3\u6784 \xB7 <em>\u8282\u70B9\u4EA4\u7EC7</em>\u6A21\u578B</h1>
+    <h1>
+      <span>\u591A\u6811\u5F62\u7ED3\u6784 \xB7 <em>\u8282\u70B9\u4EA4\u7EC7</em>\u6A21\u578B</span>
+      <span class="author">by Charles Liu</span>
+      <a class="github-link" href="https://github.com/CharlesLiuyx/tree-ssot-explain" target="_blank" rel="noopener noreferrer" aria-label="GitHub: CharlesLiuyx/tree-ssot-explain">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.09 3.29 9.4 7.86 10.93.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.75 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.23-1.27-5.23-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.16 1.18.92-.26 1.9-.38 2.88-.39.98 0 1.96.13 2.88.39 2.19-1.49 3.15-1.18 3.15-1.18.63 1.58.23 2.75.12 3.04.74.8 1.18 1.83 1.18 3.08 0 4.42-2.69 5.39-5.25 5.68.41.36.77 1.06.77 2.13v3.02c0 .31.21.67.79.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/>
+        </svg>
+      </a>
+    </h1>
     <div class="sub">Multi-Tree / Node-Entanglement Model \u2014\u2014 \u4E3A\u4EC0\u4E48\u9879\u76EE\u590D\u6742\u5230\u67D0\u4E00\u523B\uFF0CAI \u7A81\u7136\u5C31\u300C\u7CCA\u300D\u4E86</div>
   </div>
   <div class="keys">\u62D6\u52A8\u65CB\u8F6C \xB7 \u6EDA\u8F6E\u7F29\u653E \xB7 <b>\u70B9\u51FB\u8282\u70B9</b> Zoom in \xB7 <b>Esc</b> \u8FD4\u56DE \xB7 <b>V</b> \u89C6\u53E3\u5168\u666F \xB7 <b>\u2190/\u2192</b> \u5207\u6362\u6B65\u9AA4 \xB7 \u60AC\u505C\u770B\u8BE6\u60C5</div>

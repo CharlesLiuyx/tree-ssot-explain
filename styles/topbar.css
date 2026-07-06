@@ -2,8 +2,19 @@
 #topbar{position:fixed;top:0;left:0;right:0;z-index:10;pointer-events:none;
   padding:14px 22px;display:flex;justify-content:space-between;align-items:baseline;
   background:linear-gradient(180deg,rgba(6,8,13,.85),transparent)}
-#topbar h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.06em}
+#topbar h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.06em;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 #topbar h1 em{font-style:normal;color:var(--gold)}
+#topbar .author{color:var(--sub);font-size:12px;font-weight:500;letter-spacing:0;white-space:nowrap}
+#topbar .github-link{width:21px;height:21px;display:inline-flex;align-items:center;justify-content:center;
+  color:var(--sub);border:1px solid var(--line);border-radius:50%;pointer-events:auto;
+  transition:color .15s,border-color .15s,background .15s}
+#topbar .github-link:hover,#topbar .github-link:focus-visible{color:var(--txt);border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.08)}
+#topbar .github-link svg{width:14px;height:14px;display:block;fill:currentColor}
 #topbar .sub{color:var(--sub);font-size:12px;margin-top:2px}
 #topbar .keys{color:var(--sub);font-size:12px}
 #topbar .keys b{color:var(--txt);font-weight:600}
+
+@media (max-width: 860px){
+  #topbar{align-items:flex-start}
+  #topbar .keys{display:none}
+}
