@@ -53,6 +53,15 @@ npm run build  # 即 node build-embedded.mjs，产出 index-embedded.html
 依赖清单（`vendor/`，three.js r160，来源 cdn.jsdelivr.net）：
 `three.module.js`、`controls/OrbitControls.js`。
 
+## 部署
+
+GitHub Pages 公开访问地址：
+`https://charlesliuyx.github.io/tree-ssot-explain/`
+
+每次推送到 `main` 都会触发 `.github/workflows/deploy-pages.yml`，由 GitHub Actions
+把静态站点发布到 GitHub Pages。部署 artifact 只包含浏览器运行所需的文件：
+`index.html`、`index-embedded.html`、`src/`、`styles/`、`vendor/`。
+
 ## 代码结构
 
 数据、故事、场景、UI、编排五层分治，依赖只许向下（`main → app → ui / scene → core / story / data / config`），
