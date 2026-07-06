@@ -43,12 +43,37 @@ controls.addEventListener('change', () => { if (!controls.autoRotate) smoothWake
 ['pointerdown', 'wheel', 'touchstart'].forEach(ev => addEventListener(ev, () => smoothWake(), { passive: true }));
 ['keydown', 'pointerup', 'click'].forEach(ev => addEventListener(ev, () => wake(2600)));   // 换步/开关策略后,留时间让形变与熵值动画收敛
 
+/* ===== 交互期动态分辨率 =====
+   Retina 满帧的主要压力在片元:dpr 1.5 ≈ 2.25× 像素,叠加大面积 additive 透明(圆盘/光束/光环)。
+   拖拽/缩放期间画面本来就在动,暂降到 dpr 1.2(片元省 ~36%)换稳定满帧;
+   手势结束后自动恢复满分辨率——setPixelRatio 会重建绘制缓冲,
+   因此恢复的那一帧必须立即渲染(由主循环保证),否则画布会停在空白。
+   信号只取画布上的真实手势(按下-抬起区间 + 松手后 600ms 惯性尾巴 + 滚轮):
+   不挂 controls.change——它对一切相机移动都触发(切步飞行/停自转后的余摆),那些该保持满清晰度;
+   点面板按钮/拖面板滑杆也不会降档,背景不闪糊。
+   与 degradeQuality 的「只降不升」永久降档互补:这里是可逆的、按手势作用域的临时降档。 */
+const INTERACT_DPR = 1.2;
+let _dprDrag = false, _dprUntil = 0, _dprLow = false;
+function dprWake(ms) { const n = performance.now() + ms; if (n > _dprUntil) _dprUntil = n; }
+export const dprLowered = () => _dprLow;
+export function applyInteractDpr(now) {
+  const want = (_dprDrag || now < _dprUntil) && pixelRatioCap >= INTERACT_DPR + .2; // 上限已降到 1.2 附近则无意义,不再切换
+  if (want === _dprLow) return;
+  _dprLow = want;
+  renderer.setPixelRatio(want ? INTERACT_DPR : pixelRatioCap);
+}
+function dprRelease() { if (_dprDrag) { _dprDrag = false; dprWake(600); } } // 惯性大头在低档内收敛,亚像素尾巴回满档
+renderer.domElement.addEventListener('pointerdown', () => { _dprDrag = true; dprWake(0); }, { passive: true });
+addEventListener('pointerup', dprRelease, { passive: true });      // 释放可能发生在画布外
+addEventListener('pointercancel', dprRelease, { passive: true });
+renderer.domElement.addEventListener('wheel', () => dprWake(420), { passive: true });
+
 /* 自适应画质:持续跟不上才逐级降档(像素比 1.5→1.25→1.0,最后环境帧率 60→30),只降不升。
    由主循环喂入单帧真实耗时。 */
 export function degradeQuality() {
   if (pixelRatioCap > 1) {
     pixelRatioCap = Math.max(1, Math.round((pixelRatioCap - .25) * 100) / 100);
-    renderer.setPixelRatio(pixelRatioCap);
+    if (!_dprLow) renderer.setPixelRatio(pixelRatioCap); // 交互降档中不抢:恢复时自然应用新上限
     return true;
   }
   if (_ambientFps > 30) { _ambientFps = 30; return true; }

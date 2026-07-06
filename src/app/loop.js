@@ -1,10 +1,12 @@
 // 主循环:只做调度——帧率门控、逐系统 update、渲染、画质自适应。
 // 空闲即停渲染(不自转/无动画/无近期交互时直接 return,CPU 归零);
 // 环境 60fps / 交互(拖拽·缩放·切步)放开到刷新率(封 120);后台标签页不渲染;
+// 画布手势期间临时降 dpr 换满帧,手势结束恢复满分辨率并立即补渲一帧(applyInteractDpr);
 // 机器跟不上时自适应降档(像素比 → 环境帧率)。
 
 import { renderer, scene, camera, controls, clock,
-  wakeUntil, smoothUntil, degradeQuality, ambientFps, SMOOTH_FPS } from '../scene/context.js';
+  wakeUntil, smoothUntil, degradeQuality, ambientFps, SMOOTH_FPS,
+  applyInteractDpr, dprLowered } from '../scene/context.js';
 import { tweens, stepTweens } from '../core/tween.js';
 import { spinners } from '../core/registry.js';
 import { runtime } from '../core/state.js';
@@ -40,9 +42,16 @@ function animate() {
   requestAnimationFrame(animate);
   if (document.hidden) return;        // 后台标签页:不渲染
   const nowMs = performance.now();
-  if (!sceneActive(nowMs)) { _lastUpdMs = nowMs; return; }          // 完全静止 → 停渲染,CPU 归零
+  let restoreFrame = false;           // 交互降档刚恢复满分辨率的收尾帧:缓冲已重建,必须立即渲染
+  if (!sceneActive(nowMs)) {
+    const wasLow = dprLowered();
+    applyInteractDpr(nowMs);          // 手势结束 → 恢复满分辨率;仍按住不动 → 保持低档零渲染
+    if (!wasLow || dprLowered()) { _lastUpdMs = nowMs; return; } // 完全静止 → 停渲染,CPU 归零
+    restoreFrame = true;
+  }
   const frameMs = (tweens.size > 0 || nowMs < smoothUntil()) ? (1000 / SMOOTH_FPS) : (1000 / ambientFps());
-  if (nowMs - _lastFrameMs < frameMs - 1.5) return;                 // 帧率上限(环境 / 交互)
+  if (!restoreFrame && nowMs - _lastFrameMs < frameMs - 1.5) return; // 帧率上限(环境 / 交互;恢复帧不受门控)
+  applyInteractDpr(nowMs);            // 手势进行中 → 本帧起以低分辨率渲染(恢复帧上是无操作)
   _lastFrameMs = nowMs;
   const dt = Math.min(.05, (nowMs - _lastUpdMs) / 1000); _lastUpdMs = nowMs; const fk = dt * 60; // fk:把「按帧累加」的量归一到 60fps 基准
 
