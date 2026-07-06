@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // 冒烟测试:无头 Chrome 真实加载页面 → 等待 3D 引擎启动 → 用 ←/→ 走完全部叙事步骤,
-// 全程收集 console 错误 / 页面异常 / 资源加载失败,并逐步截图存入 test-artifacts/。
+// 全程收集 console 错误 / 页面异常 / 资源加载失败,并逐步截图;通过后清理截图,失败时保留。
 // 把「人肉开浏览器点一遍」压缩成一条 30 秒内的命令,任何一步报错即退出码非零。
 //
 // 用法:pnpm run smoke              测源码版(内置静态服务器 + http)
@@ -8,15 +8,16 @@
 // 依赖:系统已装 Chrome / Chromium(不额外下载浏览器);特殊路径用环境变量 CHROME_PATH 指定。
 
 import { createServer } from 'node:http';
-import { readFile, mkdir } from 'node:fs/promises';
+import { readFile, mkdir, rm, rmdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import puppeteer from 'puppeteer-core';
-import { DOT_NAMES } from './src/story/stages.js';
+import { DOT_NAMES } from '../src/story/stages.js';
 
 const EMBEDDED = process.argv.includes('--embedded');
 const MODE = EMBEDDED ? 'embedded' : 'source';
-const SHOT_DIR = join('test-artifacts', MODE);
+const ARTIFACT_ROOT = 'test-artifacts';
+const SHOT_DIR = join(ARTIFACT_ROOT, MODE);
 const BOOT_TIMEOUT = 30_000;   // 引擎启动上限(本地加载,通常 <2s)
 const STAGE_TIMEOUT = 10_000;  // 单步切换上限(相机飞行 150ms,余量给慢机器)
 const SETTLE_MS = 450;         // 切步后的动效沉降时间,再截图
@@ -140,10 +141,13 @@ try {
   errors.push(...pageErrs.map(e => `页内收集器: ${e}`));
   if (errors.length) throw new Error('捕获到运行错误');
 
-  console.log(`✓ 冒烟通过[${MODE}]:启动 + ${DOT_NAMES.length} 步叙事 + 反向切步,零错误(${elapsed()});截图:${SHOT_DIR}/`);
+  await rm(SHOT_DIR, { recursive: true, force: true });
+  await rmdir(ARTIFACT_ROOT).catch(() => {});
+  console.log(`✓ 冒烟通过[${MODE}]:启动 + ${DOT_NAMES.length} 步叙事 + 反向切步,零错误(${elapsed()});截图已清理`);
 } catch (e) {
   console.error(`✗ 冒烟失败[${MODE}]:${e.message}(${elapsed()})`);
   for (const err of errors) console.error('  · ' + err);
+  console.error(`  · 失败截图保留在:${SHOT_DIR}/`);
   process.exitCode = 1;
 } finally {
   await browser.close();

@@ -7,7 +7,7 @@ node_modules/
 # 构建产物:CI 现场生成并部署,不入库(本地 pnpm run build 可随时重建)
 index-embedded.html
 
-# 冒烟测试逐步截图(pnpm run smoke)
+# 冒烟测试失败截图(pnpm run smoke)
 test-artifacts/
 
 # Claude Code local machine-specific settings (paths, permissions)

@@ -18,7 +18,7 @@ manager is **pnpm**, used only for build/test-time devDependencies (`esbuild`,
  committed** (gitignored) — generate it locally with `pnpm run build`; CI builds it on deploy.
 
 ### Build
-- `pnpm run build` (= `node build-embedded.mjs`) generates `index-embedded.html` from
+- `pnpm run build` (= `node scripts/build-embedded.mjs`) generates `index-embedded.html` from
  `index.html` + `src/` + `styles/` + `vendor/`. The build is deterministic. Run it after
  editing `index.html`/`src/`/`styles/` if you need the single-file version.
 
@@ -27,8 +27,9 @@ manager is **pnpm**, used only for build/test-time devDependencies (`esbuild`,
  errors, broken import paths, and missing stylesheet links. Run it after every edit.
 - `pnpm run smoke` (~30s): headless-Chrome smoke test — boots the source version, steps through
  all 10 narrative stages with ←/→, fails on any console error / uncaught exception / failed
- request, and drops per-stage screenshots into `test-artifacts/` (gitignored). Uses the system
- Chrome (no browser download); override the binary with `CHROME_PATH` if needed.
+ request, and keeps per-stage screenshots in `test-artifacts/` only on failure (gitignored);
+ successful runs clean them up. Uses the system Chrome (no browser download); override the binary
+ with `CHROME_PATH` if needed.
 - `pnpm run smoke:embedded` (~30s): same, but loads the built `index-embedded.html` over
  `file://` (the double-click path). Requires `pnpm run build` first.
 - `pnpm run verify`: check → smoke → build → smoke:embedded — the same gate CI runs before

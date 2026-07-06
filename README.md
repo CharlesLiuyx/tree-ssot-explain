@@ -47,7 +47,7 @@ python3 -m http.server 4173   # 或 pnpm run serve
 
 ```bash
 pnpm install    # 仅首次：安装构建期依赖 esbuild + puppeteer-core（版本已锁定，无任何运行时依赖）
-pnpm run build  # 即 node build-embedded.mjs，产出 index-embedded.html
+pnpm run build  # 即 node scripts/build-embedded.mjs，产出 index-embedded.html
 ```
 
 依赖清单（`vendor/`，three.js r160，来源 cdn.jsdelivr.net）：
@@ -58,7 +58,7 @@ pnpm run build  # 即 node build-embedded.mjs，产出 index-embedded.html
 | 命令 | 耗时 | 覆盖范围 |
 |---|---|---|
 | `pnpm run check` | ~0.2s | 静态校验：语法错误、import 路径写错、样式链接失效（esbuild 解析全图，不写产物） |
-| `pnpm run smoke` | ~30s | 冒烟测试：无头 Chrome 真实加载源码版 → 等引擎启动 → ←/→ 走完 10 步叙事，收集一切 console 错误/未捕获异常/加载失败，逐步截图到 `test-artifacts/` |
+| `pnpm run smoke` | ~30s | 冒烟测试：无头 Chrome 真实加载源码版 → 等引擎启动 → ←/→ 走完 10 步叙事，收集一切 console 错误/未捕获异常/加载失败；逐步截图只在失败时保留到 `test-artifacts/`，通过后自动清理 |
 | `pnpm run smoke:embedded` | ~30s | 同上，但测单文件版且走 `file://`（与用户「双击打开」同路径；需先 build） |
 | `pnpm run verify` | ~1min | 全量：check → smoke → build → smoke:embedded，等价于 CI 的部署门禁 |
 
@@ -71,8 +71,8 @@ GitHub Pages 公开访问地址：
 `https://charlesliuyx.github.io/tree-ssot-explain`
 
 每次推送到 `main` 都会触发 `.github/workflows/deploy-pages.yml`：先过验证门禁
-（静态校验 → 源码版冒烟 → 现场构建 `index-embedded.html` → 产物冒烟，任一失败即不部署，
-冒烟截图会上传为 artifact 供排查），再把静态站点发布到 GitHub Pages。部署 artifact
+（静态校验 → 源码版冒烟 → 现场构建 `index-embedded.html` → 产物冒烟，任一失败即不部署；
+冒烟截图通过后清理、失败时上传为 artifact 供排查），再把静态站点发布到 GitHub Pages。部署 artifact
 只包含浏览器运行所需的文件：`index.html`、`index-embedded.html`（CI 现场构建）、
 `src/`、`styles/`、`vendor/`。
 
@@ -83,8 +83,9 @@ GitHub Pages 公开访问地址：
 
 ```
 index.html            轻壳：boot 兜底 + importmap + <link> 样式 + <script src=src/main.js>
-build-embedded.mjs    esbuild 打包 src/main.js 并内联全部 CSS/JS 为单文件版；--check 只校验不产出
-smoke-test.mjs        冒烟测试：无头 Chrome 加载页面走完 10 步叙事，零错误才放行
+scripts/
+  build-embedded.mjs  esbuild 打包 src/main.js 并内联全部 CSS/JS 为单文件版；--check 只校验不产出
+  smoke-test.mjs      冒烟测试：无头 Chrome 加载页面走完 10 步叙事，零错误才放行
 styles/               CSS 按组件拆分（base / topbar / panel / hud / tooltip / labels / viewport）
 src/
   config.js           调色板、树形体型、布局锚点、叙事焦点等常量
@@ -151,7 +152,7 @@ src/
 
 three.js r160（importmap → 本地 `vendor/`）+ OrbitControls + 自研轻量 2D 标签渲染器，
 源码版无构建步骤（原生 ES Module，入口 `src/main.js`）；
-`build-embedded.mjs` 用 esbuild（resolve 插件把 `three` 裸导入指到 `vendor/`）
+`scripts/build-embedded.mjs` 用 esbuild（resolve 插件把 `three` 裸导入指到 `vendor/`）
 把全部 CSS/JS 内联为单文件 `index-embedded.html`。
 
 **渲染架构（为全程不卡顿而设计）**：

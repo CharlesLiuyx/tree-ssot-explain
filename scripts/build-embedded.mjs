@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // 把模块化源码打包为单文件版本 index-embedded.html:
 // 内联全部 CSS(styles/)与 JS(src/ + vendor/ 的 three.js),零外部请求,可直接双击打开。
-// 用法:pnpm install 一次,之后 pnpm run build(或 node build-embedded.mjs)
+// 用法:pnpm install 一次,之后 pnpm run build(或 node scripts/build-embedded.mjs)
 // 校验:pnpm run check(即 --check)只走打包解析不写产物 —— 0.2 秒内抓出
 //       语法错误 / import 路径写错 / 样式链接失效,适合改完代码立刻跑。
 import { readFileSync, writeFileSync } from 'node:fs';

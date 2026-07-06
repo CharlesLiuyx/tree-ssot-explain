@@ -18,7 +18,7 @@ concurrency:
 jobs:
   # 验证 + 构建:静态校验 → 源码版冒烟(无头 Chrome 走完 10 步叙事)→
   # 构建单文件版(不入库,CI 现场生成)→ 对构建产物再冒烟 → 打包站点。
-  # 任何一步失败都不会部署;冒烟截图会作为 artifact 上传,便于失败时排查。
+  # 任何一步失败都不会部署;冒烟测试通过会清理截图,失败截图会作为 artifact 上传供排查。
   build:
     runs-on: ubuntu-latest
     steps:
@@ -49,12 +49,13 @@ jobs:
       - name: Smoke test (embedded, file://)
         run: pnpm run smoke:embedded
 
-      - name: Upload smoke screenshots
-        if: always()
+      - name: Upload smoke failure screenshots
+        if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: smoke-screenshots
           path: test-artifacts/
+          if-no-files-found: ignore
           retention-days: 14
 
       - name: Prepare static site

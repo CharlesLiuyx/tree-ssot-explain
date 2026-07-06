@@ -1,0 +1,3 @@
+# pnpm 11 reads dependency build-script approvals from workspace config.
+allowBuilds:
+  esbuild: true

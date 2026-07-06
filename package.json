@@ -3,22 +3,17 @@
   "private": true,
   "type": "module",
   "description": "多树形结构 · 节点交织模型(3D 可视化)",
-  "packageManager": "pnpm@10.33.3",
+  "packageManager": "pnpm@11.7.0",
   "scripts": {
-    "check": "node build-embedded.mjs --check",
-    "build": "node build-embedded.mjs",
-    "smoke": "node smoke-test.mjs",
-    "smoke:embedded": "node smoke-test.mjs --embedded",
+    "check": "node scripts/build-embedded.mjs --check",
+    "build": "node scripts/build-embedded.mjs",
+    "smoke": "node scripts/smoke-test.mjs",
+    "smoke:embedded": "node scripts/smoke-test.mjs --embedded",
     "verify": "pnpm run check && pnpm run smoke && pnpm run build && pnpm run smoke:embedded",
     "serve": "python3 -m http.server 4173"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
     "puppeteer-core": "^25.3.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
   }
 }
