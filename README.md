@@ -34,33 +34,47 @@
 
 | 文件 | 打开方式 | 说明 |
 |---|---|---|
-| `index-embedded.html` | **直接双击** | 单文件，three.js 全部内联，零外部请求，适合分发/归档 |
 | `index.html` | 本地服务器 | 源码版，依赖走 `vendor/`（浏览器会拦截 file:// 下的 ES Module，需 http） |
+| `index-embedded.html` | **直接双击** | 单文件，three.js 全部内联，零外部请求，适合分发/归档。**构建产物，不入库**：本地 `pnpm run build` 生成，或直接从[线上站点](https://charlesliuyx.github.io/tree-ssot-explain/index-embedded.html)下载 |
 
 ```bash
 # 源码版（零构建，原生 ES Module + importmap）：
-python3 -m http.server 4173   # 或 npm run serve
+python3 -m http.server 4173   # 或 pnpm run serve
 # 打开 http://127.0.0.1:4173/
 ```
 
 修改源码后重新生成内联版：
 
 ```bash
-npm install    # 仅首次：安装构建期依赖 esbuild（版本已锁定，无任何运行时依赖）
-npm run build  # 即 node build-embedded.mjs，产出 index-embedded.html
+pnpm install    # 仅首次：安装构建期依赖 esbuild + puppeteer-core（版本已锁定，无任何运行时依赖）
+pnpm run build  # 即 node build-embedded.mjs，产出 index-embedded.html
 ```
 
 依赖清单（`vendor/`，three.js r160，来源 cdn.jsdelivr.net）：
 `three.module.js`、`controls/OrbitControls.js`。
+
+## 验证（改完代码跑什么）
+
+| 命令 | 耗时 | 覆盖范围 |
+|---|---|---|
+| `pnpm run check` | ~0.2s | 静态校验：语法错误、import 路径写错、样式链接失效（esbuild 解析全图，不写产物） |
+| `pnpm run smoke` | ~30s | 冒烟测试：无头 Chrome 真实加载源码版 → 等引擎启动 → ←/→ 走完 10 步叙事，收集一切 console 错误/未捕获异常/加载失败，逐步截图到 `test-artifacts/` |
+| `pnpm run smoke:embedded` | ~30s | 同上，但测单文件版且走 `file://`（与用户「双击打开」同路径；需先 build） |
+| `pnpm run verify` | ~1min | 全量：check → smoke → build → smoke:embedded，等价于 CI 的部署门禁 |
+
+冒烟测试不下载浏览器，直接复用系统 Chrome/Chromium；特殊安装路径用环境变量
+`CHROME_PATH` 指定。日常节奏：改一行跑 `check`，提交前跑 `verify`。
 
 ## 部署
 
 GitHub Pages 公开访问地址：
 `https://charlesliuyx.github.io/tree-ssot-explain`
 
-每次推送到 `main` 都会触发 `.github/workflows/deploy-pages.yml`，由 GitHub Actions
-把静态站点发布到 GitHub Pages。部署 artifact 只包含浏览器运行所需的文件：
-`index.html`、`index-embedded.html`、`src/`、`styles/`、`vendor/`。
+每次推送到 `main` 都会触发 `.github/workflows/deploy-pages.yml`：先过验证门禁
+（静态校验 → 源码版冒烟 → 现场构建 `index-embedded.html` → 产物冒烟，任一失败即不部署，
+冒烟截图会上传为 artifact 供排查），再把静态站点发布到 GitHub Pages。部署 artifact
+只包含浏览器运行所需的文件：`index.html`、`index-embedded.html`（CI 现场构建）、
+`src/`、`styles/`、`vendor/`。
 
 ## 代码结构
 
@@ -69,7 +83,8 @@ GitHub Pages 公开访问地址：
 
 ```
 index.html            轻壳：boot 兜底 + importmap + <link> 样式 + <script src=src/main.js>
-build-embedded.mjs    esbuild 打包 src/main.js 并内联全部 CSS/JS 为单文件版
+build-embedded.mjs    esbuild 打包 src/main.js 并内联全部 CSS/JS 为单文件版；--check 只校验不产出
+smoke-test.mjs        冒烟测试：无头 Chrome 加载页面走完 10 步叙事，零错误才放行
 styles/               CSS 按组件拆分（base / topbar / panel / hud / tooltip / labels / viewport）
 src/
   config.js           调色板、树形体型、布局锚点、叙事焦点等常量
