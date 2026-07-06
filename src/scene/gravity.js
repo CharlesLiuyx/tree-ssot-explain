@@ -53,7 +53,7 @@ export function registerGravity() {
 /* 每帧:按引力强度插值节点位置,更新光束/粒子/气泡与被拉弯的枝干 */
 export function updateGravity(time, dt) {
   const fuseTarget = stratOn('fusion') ? 1 : 0;
-  fuseBlend += (fuseTarget - fuseBlend) * expK(dt, 3.7);
+  fuseBlend += (fuseTarget - fuseBlend) * expK(dt, 7.5); // 共域开关的过渡:快速收敛,清爽不拖泥
   if (Math.abs(fuseTarget - fuseBlend) < .002) fuseBlend = fuseTarget;
   const applied = runtime.gravityPull * (.72 + .26 * fuseBlend);
   const beamOn = runtime.gravityPull > .03;

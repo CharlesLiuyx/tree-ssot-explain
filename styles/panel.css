@@ -22,6 +22,15 @@
 #case-box{display:none;margin-top:10px;padding:10px 12px;border-left:3px solid var(--red);
   background:rgba(255,77,109,.08);border-radius:0 8px 8px 0;font-size:12.8px;line-height:1.7;min-height:64px}
 #case-box b{color:var(--red)}
+/* STEP 3:案例播放控制——进度条拖到第几条就播放到第几条;「全展示」一步点亮全部 */
+#case-ctrl{display:none;align-items:center;gap:9px;margin-top:7px;padding:7px 10px;
+  border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.04)}
+#case-ctrl input[type=range]{flex:1;min-width:0;margin:0;accent-color:var(--red);cursor:pointer}
+#case-count{font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap;min-width:41px;text-align:right}
+#case-all{cursor:pointer;border:1px solid rgba(255,77,109,.4);border-radius:99px;padding:3px 10px;white-space:nowrap;
+  background:rgba(255,77,109,.1);color:var(--red);font-family:inherit;font-size:11.5px;font-weight:700;transition:background .15s,border-color .15s}
+#case-all:hover{background:rgba(255,77,109,.22);border-color:var(--red)}
+#case-all:disabled{opacity:.35;pointer-events:none}
 /* STEP 4:案例栏转洋红(点名引力对) */
 #case-box.mg{border-left-color:var(--mg);background:rgba(255,47,208,.07)}
 #case-box.mg b{color:var(--mg)}
@@ -71,6 +80,16 @@
 .law-scene{display:none;margin-top:6px;padding:6px 9px;border-radius:7px;background:rgba(255,209,102,.08);
   color:var(--txt);font-size:11.5px;line-height:1.6}
 .law.on .law-scene{display:block}
+
+/* STEP 9:树之树生长速度(滑杆随时调,↻ 重播以当前速度重新长一遍) */
+.meta-speed{display:flex;align-items:center;gap:9px;margin:7px 0 2px;padding:7px 10px;
+  border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.04);
+  font-size:11.5px;color:var(--sub);white-space:nowrap}
+.meta-speed input[type=range]{flex:1;min-width:0;margin:0;accent-color:var(--gold);cursor:pointer}
+.meta-speed b{color:var(--gold);font-variant-numeric:tabular-nums;min-width:30px;text-align:right}
+.meta-speed button{cursor:pointer;border:1px solid rgba(255,209,102,.4);border-radius:99px;padding:3px 10px;
+  background:rgba(255,209,102,.1);color:var(--gold);font-family:inherit;font-size:11.5px;font-weight:700;transition:background .15s,border-color .15s}
+.meta-speed button:hover{background:rgba(255,209,102,.22);border-color:var(--gold)}
 
 #nav{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 #nav button{cursor:pointer;border:none;border-radius:9px;padding:8px 16px;font-family:inherit;font-size:13.5px;font-weight:600}

@@ -50,7 +50,7 @@ function animate() {
   updateGravity(t, dt);            // 节点位移时会置 runtime.linkDirty
   updateGhosts(t, dt);
   updateLawFx(t);                  // 法则聚光:叠加在引力/幽灵根每帧重写的透明度之上,必须在其后
-  updateMeta(t);
+  updateMeta(t, dt);
   const moved = runtime.linkDirty;
   if (moved) { rebuildTangles(); runtime.linkDirty = false; }
   updatePools(t, moved);           // 实例矩阵同步:节点(位移帧)+ 装饰(自旋/开关)+ SDD 脉冲

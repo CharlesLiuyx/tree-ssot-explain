@@ -26,6 +26,10 @@ export const FOCUS_ID = 'perf.cache';
 export const FOCUS_SET = new Set([FOCUS_ID, 'authz.rowacl', 'gate.canary', 'arch.cfg', 'perf.root',
   'compat.dualread', 'priv.forget', 'tenant.dataisol']);
 
+/* 动效时长(秒):所有转场与移动都要清爽、快速 */
+export const FAST_DUR = 0.12;   // 视口导航(点击 Zoom in / 返回)
+export const STAGE_DUR = 0.15;  // 叙事切步转场(相机飞行 ≤150ms;引力等步进信息同步消隐)
+export const MOVE_DUR = 0.45;   // 场内位移与引导飞行(分层排布/平台弹出/法则现场)
+
 /* 视口历史(点击 Zoom in) */
-export const FAST_DUR = 0.12;  // 导航动效时长(秒):快而爽快
 export const VP_MAX = 30;      // 视口总数上限,超过即触发 LRU 垃圾回收

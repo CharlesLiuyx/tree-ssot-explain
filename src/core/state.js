@@ -21,7 +21,8 @@ export function stratOn(k) { return state.strat[k] && state.stage >= 7; }
    highlightTangle  STEP 3 正在高亮的案例序号:导演 → 主循环
    highlightGravity STEP 4 案例栏正在点名的引力对序号:导演 → 引力系统(光束增亮/节点呼吸)
    tangleCounts     纠缠线分类计数:纠缠系统 → 策略统计栏
-   metaPathIdx      STEP 9 当前演化路径:路径切换 → 树之树/面板 */
+   metaPathIdx      STEP 9 当前演化路径:路径切换 → 树之树/面板
+   metaSpeed        STEP 9 生长速度倍率(面板滑杆可调):面板 → 树之树 */
 export const runtime = {
   gravityPull: 0,
   linkDirty: false,
@@ -31,6 +32,7 @@ export const runtime = {
   highlightGravity: -1,
   tangleCounts: { red: 0, amber: 0, grey: 0, plat: 0 },
   metaPathIdx: 0,
+  metaSpeed: 1,
   lawFocus: '',      // STEP 8 当前选中的法则 k(空 = 全景视角)
   lawFocusUntil: 0,  // 法则聚光脉冲的截止时间戳(到期后场景高亮自动复位)
 };

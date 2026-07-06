@@ -106,26 +106,27 @@ export function updateGhosts(t, dt) {
   const show = stage === 0 || (stage >= 5 && stage !== 9);
   const faint = stage === 0 ? .45 : 1;
   const dim = stage === 6 ? .15 : 1;
-  const k37 = expK(dt, 3.7), k31 = expK(dt, 3.1);
-  ghostCollect += ((stratOn('explicit') ? 1 : 0) - ghostCollect) * k31;
-  ghostLayerK += ((stratOn('layer') ? 1.45 : 1) - ghostLayerK) * k31;
-  ringScaleK += ((stratOn('layer') ? 1.62 : 1) - ringScaleK) * k31;
+  // 渐变速率:淡入淡出(kFade)要跟得上 150ms 的切步转场;位移类(kMove:收编/分层撑大)稍缓仍有过程感
+  const kFade = expK(dt, 8), kMove = expK(dt, 6.5);
+  ghostCollect += ((stratOn('explicit') ? 1 : 0) - ghostCollect) * kMove;
+  ghostLayerK += ((stratOn('layer') ? 1.45 : 1) - ghostLayerK) * kMove;
+  ringScaleK += ((stratOn('layer') ? 1.62 : 1) - ringScaleK) * kMove;
   boundaryRing.scale.setScalar(ringScaleK);
   const ringTarget = (show ? 1 : 0) * faint * dim * .32;
-  boundaryRing.material.opacity += (ringTarget - boundaryRing.material.opacity) * k37;
+  boundaryRing.material.opacity += (ringTarget - boundaryRing.material.opacity) * kFade;
   boundaryRing.visible = boundaryRing.material.opacity > .01;
   bLab.visible = show && stage >= 5 && dim === 1;
   bLab.position.set(0, 2.4, 86 * ringScaleK);
   // 树环:分层开启时树被压进层间(墙与接口环接管边界感),树环随之淡出
   const layerBlend = Math.min(1, Math.max(0, (ringScaleK - 1) / .62));
   const treeTarget = (show ? 1 : 0) * faint * dim * .42 * (1 - layerBlend);
-  treeRingMat.opacity += (treeTarget - treeRingMat.opacity) * k37;
-  treeDiscMat.opacity += (treeTarget * .18 - treeDiscMat.opacity) * k37;
+  treeRingMat.opacity += (treeTarget - treeRingMat.opacity) * kFade;
+  treeDiscMat.opacity += (treeTarget * .18 - treeDiscMat.opacity) * kFade;
   const treeRingVis = treeRingMat.opacity > .01;
   for (const g of treeRings) g.visible = treeRingVis;
   trLab.visible = show && stage >= 5 && dim === 1 && layerBlend < .5;
   for (const g of GHOSTS) {
-    g.blend += ((show ? 1 : 0) - g.blend) * k37;
+    g.blend += ((show ? 1 : 0) - g.blend) * kFade;
     const on = g.blend > .02;
     g.wire.visible = on; g.inner.visible = on;
     g.label.visible = on && g.blend > .5 && stage >= 5 && dim === 1;

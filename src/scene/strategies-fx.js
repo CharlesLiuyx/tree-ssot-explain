@@ -1,7 +1,7 @@
 // 策略视觉系统:「分层」的墙与接口环、「Loops」的雷达,以及分层时的树位移排布。
 
 import * as THREE from 'three';
-import { WALL_XS } from '../config.js';
+import { WALL_XS, MOVE_DUR } from '../config.js';
 import { trees } from '../core/registry.js';
 import { stratOn, runtime } from '../core/state.js';
 import { tweenVec } from '../core/tween.js';
@@ -41,11 +41,11 @@ export function applyTreePositions() {
   trees.forEach(tr => {
     const tgt = layered ? V3(tr.def.layerX, 0, tr.def.layerZ || 0) : V3(...tr.def.pos);
     if (tr.group.position.distanceTo(tgt) > .05) {
-      tweenVec(tr.group.position, tgt, 1.3, () => { runtime.linkDirty = true; }, () => { runtime.linkDirty = true; });
+      tweenVec(tr.group.position, tgt, MOVE_DUR, () => { runtime.linkDirty = true; }, () => { runtime.linkDirty = true; });
     }
   });
   const ptgt = layered ? V3(0, 0, -52) : V3(0, 0, -20);
   if (platformGroup.position.distanceTo(ptgt) > .05) {
-    tweenVec(platformGroup.position, ptgt, 1.3, () => { runtime.linkDirty = true; }, () => { runtime.linkDirty = true; });
+    tweenVec(platformGroup.position, ptgt, MOVE_DUR, () => { runtime.linkDirty = true; }, () => { runtime.linkDirty = true; });
   }
 }

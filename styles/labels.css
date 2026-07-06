@@ -1,5 +1,5 @@
 /* 3D 场景内的 CSS2D 标签:树标签 / 平台树 / AI 球 / 幽灵根 / 引力对名牌 / 树之树元节点 */
-.tlabel{pointer-events:none;text-align:center;color:var(--txt);text-shadow:0 2px 8px rgba(0,0,0,.9);transition:opacity .5s}
+.tlabel{pointer-events:none;text-align:center;color:var(--txt);text-shadow:0 2px 8px rgba(0,0,0,.9);transition:opacity .18s}
 .tlabel b{display:block;font-size:14px;letter-spacing:.05em}
 .tlabel .ssot{display:block;font-size:10.5px;color:var(--gold);letter-spacing:.12em}
 .tlabel i{display:none;font-style:normal;font-size:11px;color:var(--sub);line-height:1.5;margin-top:3px;max-width:220px}
