@@ -1,0 +1,4 @@
+#!/bin/sh
+# Commit message 校验,规则见 docs/COMMIT_CONVENTION.md。
+# 本目录由 package.json 的 prepare 脚本(pnpm install 时)设为 core.hooksPath。
+exec node "$(git rev-parse --show-toplevel)/scripts/check-commit-msg.mjs" "$1"

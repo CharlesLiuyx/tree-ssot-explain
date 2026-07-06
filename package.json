@@ -5,6 +5,7 @@
   "description": "多树形结构 · 节点交织模型(3D 可视化)",
   "packageManager": "pnpm@11.7.0",
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "check": "node scripts/build-embedded.mjs --check",
     "build": "node scripts/build-embedded.mjs",
     "smoke": "node scripts/smoke-test.mjs",

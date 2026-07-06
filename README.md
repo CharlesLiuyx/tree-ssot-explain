@@ -1,5 +1,9 @@
 # 多树形结构 · 节点交织模型（3D 可视化）
 
+[![Deploy GitHub Pages](https://github.com/CharlesLiuyx/tree-ssot-explain/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/CharlesLiuyx/tree-ssot-explain/actions/workflows/deploy-pages.yml)
+
+**在线体验**：<https://charlesliuyx.github.io/tree-ssot-explain/>（推送 `main` 自动部署）
+
 一个 3D 交互解释器，用来阐述「多树形结构-节点交织」模型。
 以 **Blender / VS Code** 这类复杂交互工具为想象原型：
 
@@ -65,6 +69,12 @@ pnpm run build  # 即 node scripts/build-embedded.mjs，产出 index-embedded.ht
 冒烟测试不下载浏览器，直接复用系统 Chrome/Chromium；特殊安装路径用环境变量
 `CHROME_PATH` 指定。日常节奏：改一行跑 `check`，提交前跑 `verify`。
 
+## 提交规范
+
+Commit message 遵循 Conventional Commits：`type(scope): subject`，subject 中文为主、
+不以句号结尾。`pnpm install` 自动启用 `commit-msg` 钩子，不合规的提交会被拦下并提示原因。
+完整 type 表、scope 约定与示例见 [docs/COMMIT_CONVENTION.md](docs/COMMIT_CONVENTION.md)。
+
 ## 部署
 
 GitHub Pages 公开访问地址：
@@ -83,9 +93,11 @@ GitHub Pages 公开访问地址：
 
 ```
 index.html            轻壳：boot 兜底 + importmap + <link> 样式 + <script src=src/main.js>
+docs/                 规范与细则（渐进式披露：本 README 只留摘要，细节在 docs/ 按需下钻）
 scripts/
-  build-embedded.mjs  esbuild 打包 src/main.js 并内联全部 CSS/JS 为单文件版；--check 只校验不产出
-  smoke-test.mjs      冒烟测试：无头 Chrome 加载页面走完 10 步叙事，零错误才放行
+  build-embedded.mjs   esbuild 打包 src/main.js 并内联全部 CSS/JS 为单文件版；--check 只校验不产出
+  smoke-test.mjs       冒烟测试：无头 Chrome 加载页面走完 10 步叙事，零错误才放行
+  check-commit-msg.mjs Commit message 校验（.githooks/commit-msg 调用，规则见 docs/COMMIT_CONVENTION.md）
 styles/               CSS 按组件拆分（base / topbar / panel / hud / tooltip / labels / viewport）
 src/
   config.js           调色板、树形体型、布局锚点、叙事焦点等常量
