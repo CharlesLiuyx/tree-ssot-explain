@@ -56,7 +56,7 @@ npm run build  # 即 node build-embedded.mjs，产出 index-embedded.html
 ## 部署
 
 GitHub Pages 公开访问地址：
-`https://charlesliuyx.github.io/tree-ssot-explain/`
+`https://charlesliuyx.github.io/tree-ssot-explain`
 
 每次推送到 `main` 都会触发 `.github/workflows/deploy-pages.yml`，由 GitHub Actions
 把静态站点发布到 GitHub Pages。部署 artifact 只包含浏览器运行所需的文件：
