@@ -22,6 +22,23 @@
 #case-box{display:none;margin-top:10px;padding:10px 12px;border-left:3px solid var(--red);
   background:rgba(255,77,109,.08);border-radius:0 8px 8px 0;font-size:12.8px;line-height:1.7;min-height:64px}
 #case-box b{color:var(--red)}
+/* STEP 4:案例栏转洋红(点名引力对) */
+#case-box.mg{border-left-color:var(--mg);background:rgba(255,47,208,.07)}
+#case-box.mg b{color:var(--mg)}
+#case-box .gkind{display:inline-block;margin-left:8px;font-size:10.5px;color:var(--mg);
+  border:1px solid rgba(255,47,208,.4);border-radius:99px;padding:0 8px;vertical-align:1px;white-space:nowrap}
+
+/* STEP 4:引力对分组列表(轮播点名时同步高亮,点击任意一对直接查看) */
+#grav-groups{margin:8px 0 2px}
+.gv-kind{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:10px 0 3px}
+.gv-kind b{color:var(--mg);font-size:12.5px;letter-spacing:.04em;white-space:nowrap}
+.gv-kind span{color:var(--sub);font-size:11px;text-align:right}
+.gv-row{display:block;width:100%;text-align:left;margin:3px 0;padding:5px 10px;border-radius:8px;cursor:pointer;
+  background:rgba(255,255,255,.03);border:1px solid var(--line);color:var(--txt);
+  font-family:inherit;font-size:12px;line-height:1.5;transition:border-color .2s,background .2s}
+.gv-row i{font-style:normal;color:var(--mg);margin:0 2px}
+.gv-row:hover{border-color:rgba(255,47,208,.55)}
+.gv-row.on{background:rgba(255,47,208,.12);border-color:rgba(255,47,208,.7);font-weight:600}
 
 #strategies{display:none;margin-top:12px}
 .strat{display:block;width:100%;text-align:left;margin:6px 0;padding:9px 12px;border-radius:10px;cursor:pointer;
@@ -36,6 +53,24 @@
 .strat .s-desc i{font-style:normal;color:var(--ghost)}
 .strat[disabled]{pointer-events:none;opacity:.9}
 #tangle-stats{margin-top:8px;font-size:12.5px;color:var(--sub);line-height:1.7}
+
+/* STEP 8:法则卡片(图示 + 一句话;点击 → 镜头飞到现场,现场元素聚光脉冲) */
+#law-list{margin:8px 0 2px}
+.law{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;margin:7px 0;padding:9px 10px;border-radius:10px;cursor:pointer;
+  background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt);font-family:inherit;transition:border-color .2s,background .2s}
+.law:hover{border-color:rgba(255,209,102,.5)}
+.law.on{background:linear-gradient(135deg,rgba(255,209,102,.13),rgba(255,209,102,.04));border-color:var(--gold)}
+.law-fig{flex:0 0 76px}
+.law-fig svg{display:block;width:76px;height:57px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:7px}
+.law-main{flex:1;min-width:0}
+.law-name{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13.5px;font-weight:700}
+.law-name em{font-style:normal;font-size:10.5px;color:var(--gold);font-weight:600;white-space:nowrap;
+  border:1px solid rgba(255,209,102,.35);border-radius:99px;padding:1px 8px}
+.law:hover .law-name em{background:rgba(255,209,102,.12)}
+.law-gist{display:block;margin-top:3px;color:var(--sub);font-size:12px;line-height:1.6}
+.law-scene{display:none;margin-top:6px;padding:6px 9px;border-radius:7px;background:rgba(255,209,102,.08);
+  color:var(--txt);font-size:11.5px;line-height:1.6}
+.law.on .law-scene{display:block}
 
 #nav{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 #nav button{cursor:pointer;border:none;border-radius:9px;padding:8px 16px;font-family:inherit;font-size:13.5px;font-weight:600}

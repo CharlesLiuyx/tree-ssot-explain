@@ -19,6 +19,7 @@ export function stratOn(k) { return state.strat[k] && state.stage >= 7; }
    hovered          当前悬停的对象(节点记录/纠缠/引力对/幽灵根/元节点):悬停系统 → 幽灵根(闪烁让位)
    hoveredKind      悬停对象类别('node'|'tangle'|'gravity'|'ghost'|'meta')
    highlightTangle  STEP 3 正在高亮的案例序号:导演 → 主循环
+   highlightGravity STEP 4 案例栏正在点名的引力对序号:导演 → 引力系统(光束增亮/节点呼吸)
    tangleCounts     纠缠线分类计数:纠缠系统 → 策略统计栏
    metaPathIdx      STEP 9 当前演化路径:路径切换 → 树之树/面板 */
 export const runtime = {
@@ -27,6 +28,14 @@ export const runtime = {
   hovered: null,
   hoveredKind: '',
   highlightTangle: -1,
+  highlightGravity: -1,
   tangleCounts: { red: 0, amber: 0, grey: 0, plat: 0 },
   metaPathIdx: 0,
+  lawFocus: '',      // STEP 8 当前选中的法则 k(空 = 全景视角)
+  lawFocusUntil: 0,  // 法则聚光脉冲的截止时间戳(到期后场景高亮自动复位)
 };
+
+/* 法则聚光是否仍在脉冲期:返回法则 k 或 ''(scene 各系统据此点亮对应元素) */
+export function lawPulseK() {
+  return runtime.lawFocus && performance.now() < runtime.lawFocusUntil ? runtime.lawFocus : '';
+}

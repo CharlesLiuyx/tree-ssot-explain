@@ -11,6 +11,7 @@ import { runtime } from '../core/state.js';
 import { updatePools } from '../scene/pools.js';
 import { updateGravity } from '../scene/gravity.js';
 import { updateGhosts } from '../scene/ghosts.js';
+import { updateLawFx } from '../scene/law-fx.js';
 import { updateMeta, metaGroup } from '../scene/meta-tree.js';
 import { rebuildTangles, updateTangleHighlight } from '../scene/tangles.js';
 import { updateCollapse } from '../scene/collapse.js';
@@ -48,6 +49,7 @@ function animate() {
   stepTweens();
   updateGravity(t, dt);            // 节点位移时会置 runtime.linkDirty
   updateGhosts(t, dt);
+  updateLawFx(t);                  // 法则聚光:叠加在引力/幽灵根每帧重写的透明度之上,必须在其后
   updateMeta(t);
   const moved = runtime.linkDirty;
   if (moved) { rebuildTangles(); runtime.linkDirty = false; }
