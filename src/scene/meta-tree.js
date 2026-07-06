@@ -1,5 +1,6 @@
 // 树之树系统(STEP 9):每棵树坍缩成一个元节点,按「从谁的痛点里长出来」连成更大的树;
 // 金色序号 = 生长次序;虚线垂向下方森林里这棵树的真身。切路径(runtime.metaPathIdx)后重新生长。
+// 生长速度可调(runtime.metaSpeed,面板滑杆):播放头按倍速逐帧累加,中途调速不跳变。
 
 import * as THREE from 'three';
 import { GOLD, lvlOf } from '../config.js';
@@ -9,15 +10,15 @@ import { runtime } from '../core/state.js';
 import { easeOut } from '../core/tween.js';
 import { V3, makeCylinder, setCylinder, makeLine2, setLine2, disposeGroup, _v2, _v3 } from '../core/three-utils.js';
 import { Label } from './labels.js';
-import { scene, clock } from './context.js';
+import { scene } from './context.js';
 import { boundaryCenter } from './ghosts.js';
 
 export const metaGroup = new THREE.Group();
 metaGroup.position.copy(boundaryCenter); metaGroup.visible = false; scene.add(metaGroup);
 
 export let metaItems = [];
-let metaStart = 0;
-const META_STEP = .72, META_GROW = .62;
+let metaEl = 0; // 生长播放头(秒,1× 基准时间轴)
+const META_STEP = .36, META_GROW = .31; // 1× 基准节奏(默认即比旧版快一倍,更爽快;0.5× 可回到旧节奏)
 
 export function clearMeta() {
   disposeGroup(metaGroup); // Label 元素随 removed 事件自动摘除
@@ -68,15 +69,17 @@ export function buildMetaTree() {
     const drop = makeLine2(new THREE.LineDashedMaterial({ color, transparent: true, opacity: .22, dashSize: 1.6, gapSize: 1.3, depthWrite: false }), true);
     drop.renderOrder = 2; // 垂线画在退成背景的森林节点之后
     drop.visible = false; metaGroup.add(drop);
-    metaItems.push({ s, i, tr, orb, lab, edge, parentPos, pos, drop, rim, at: .35 + i * META_STEP });
+    metaItems.push({ s, i, tr, orb, lab, edge, parentPos, pos, drop, rim, at: .18 + i * META_STEP });
   });
-  metaStart = clock.getElapsedTime();
+  metaEl = 0;
 }
 
-/* 每帧:按拓扑序逐个「长出」——先从父节点把枝长过来,长到了球再冒出来 */
-export function updateMeta(t) {
+/* 每帧:按拓扑序逐个「长出」——先从父节点把枝长过来,长到了球再冒出来。
+   播放头按 runtime.metaSpeed 倍速累加(而非按绝对时刻换算),滑杆中途调速也平滑。 */
+export function updateMeta(t, dt) {
   if (!metaGroup.visible) return;
-  const el = t - metaStart;
+  metaEl += dt * runtime.metaSpeed;
+  const el = metaEl;
   for (const m of metaItems) {
     const k = Math.min(1, Math.max(0, (el - m.at) / META_GROW));
     if (m.edge) {
