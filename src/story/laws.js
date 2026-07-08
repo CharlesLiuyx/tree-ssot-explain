@@ -55,8 +55,8 @@ export const LAWS = [
      <text x="64" y="66" font-size="9" fill="${C.gold}">共域</text>
    </svg>`},
   {k: 'explicit', name: '让真相住在图内',
-   gist: '凡是 AI 读遍代码也答不出的问题（运行时装配、订阅关系、旧文件、环境配置），都要<span class="gh">显式化</span>收编回仓库——否则 AI 会把文本改「对」，把世界改坏。',
-   scene: '四个幽灵根已被收编进仓库边界——虚线变金色实线、青转金，被牵住的节点不再闪烁。正在亮起的，就是那些真相曾经漂在图外的节点。',
+   gist: '凡是 AI 读遍代码也答不出的问题（运行时装配、订阅关系、旧文件、环境配置、环外的下游依赖），都要<span class="gh">显式化</span>收编回仓库——否则 AI 会把文本改「对」，把世界改坏。',
+   scene: '五个幽灵根已被收编进仓库边界——虚线变金色实线、青转金，被牵住的节点不再闪烁。正在亮起的，就是那些真相曾经漂在图外的节点。',
    cam: [[-52, 52, 96], [-30, 10, -14]],
    svg: `<svg viewBox="0 0 96 72" fill="none" xmlns="http://www.w3.org/2000/svg">
      <circle cx="36" cy="40" r="25" stroke="${C.ghost}" stroke-width="1.4" stroke-dasharray="5 4" opacity=".8"/>

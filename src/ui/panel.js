@@ -180,11 +180,12 @@ export function updateStats() {
   annotateTerms(el);
 }
 
-/* STEP 9:演化路径切换按钮(四条) + 生长速度滑杆 + 骨骼/假肢总结(容器在 stage 9 文案里) */
+/* STEP 9:演化路径切换按钮(五条;E 积木族带 grp 分组标) + 生长速度滑杆 + 骨骼/假肢总结(容器在 stage 9 文案里) */
 export function renderMetaUI() {
   const box = $('meta-paths'); if (!box) return;
   box.innerHTML = '';
   META_PATHS.forEach((p, i) => {
+    if (p.grp) { const g = document.createElement('div'); g.className = 'meta-grp'; g.textContent = p.grp; box.appendChild(g); }
     const b = document.createElement('button');
     b.className = 'strat' + (i === runtime.metaPathIdx ? ' on' : '');
     b.innerHTML = `<span class="s-name">${p.name}<em>${p.pct}</em></span>`;
@@ -205,6 +206,6 @@ export function renderMetaUI() {
   box.appendChild(sp);
   const P = META_PATHS[runtime.metaPathIdx];
   $('meta-traits').innerHTML =
-    `<div class="quote"><b style="color:#dfe6f3">${P.proto}</b> —— ${P.desc}<br><b class="g">骨骼</b>：${P.strong}<br><b class="r">假肢</b>：${P.weak}<br><span class="dim">${P.law}</span></div>`;
+    `<div class="quote"><b style="color:#dfe6f3">${P.proto}</b> —— ${P.desc}<br><b class="g">骨骼</b>：${P.strong}<br><b class="r">假肢</b>：${P.weak}</div>`;
   annotateTerms(box); annotateTerms($('meta-traits'));
 }
