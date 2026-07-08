@@ -180,7 +180,7 @@ export function updateStats() {
   annotateTerms(el);
 }
 
-/* STEP 9:演化路径切换按钮(五条;E 积木族带 grp 分组标) + 生长速度滑杆 + 骨骼/假肢总结(容器在 stage 9 文案里) */
+/* STEP 9:演化路径切换按钮(七条;积木族首条带 grp 分组标) + 生长速度滑杆 + 骨骼/假肢总结(容器在 stage 9 文案里) */
 export function renderMetaUI() {
   const box = $('meta-paths'); if (!box) return;
   box.innerHTML = '';
