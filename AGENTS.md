@@ -29,8 +29,11 @@ git hooks in `.githooks/` via the `prepare` script).
 
 ## Lint / test
 
-- `pnpm run check` (~0.2s): esbuild static pass over the whole import graph — catches syntax
-  errors, broken import paths, and missing stylesheet links. Run it after every edit.
+- `pnpm run check` (~0.3s): esbuild static pass over the whole import graph — catches syntax
+ errors, broken import paths, and missing stylesheet links — plus `scripts/check-narrative.mjs`,
+ which asserts that counts hard-coded in narrative copy (`src/story/`, README) match values
+ derived from `src/data/` (tangle/gravity/ghost/path/term counts, missing-tree claims, etc.).
+ Run it after every edit; when it fails it prints the expected value and where to fix.
 - `pnpm run smoke` (~30s): headless-Chrome smoke test — boots the source version, steps through
   all 10 narrative stages with ←/→, fails on any console error / uncaught exception / failed
   request, and keeps per-stage screenshots in `test-artifacts/` only on failure (gitignored);

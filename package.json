@@ -6,7 +6,7 @@
   "packageManager": "pnpm@11.7.0",
   "scripts": {
     "prepare": "git config core.hooksPath .githooks || true",
-    "check": "node scripts/build-embedded.mjs --check",
+    "check": "node scripts/build-embedded.mjs --check && node scripts/check-narrative.mjs",
     "build": "node scripts/build-embedded.mjs",
     "smoke": "node scripts/smoke-test.mjs",
     "smoke:embedded": "node scripts/smoke-test.mjs --embedded",
