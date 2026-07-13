@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 验证 + 构建:静态校验 → 源码版冒烟(无头 Chrome 走完 10 步叙事)→
+  # 验证 + 构建:静态校验 → 源码版冒烟(无头 Chrome 走完 10 步叙事,zh + en 两种语言)→
   # 构建单文件版(不入库,CI 现场生成)→ 对构建产物再冒烟 → 打包站点。
   # 任何一步失败都不会部署;冒烟测试通过会清理截图,失败截图会作为 artifact 上传供排查。
   build:
@@ -42,6 +42,9 @@ jobs:
 
       - name: Smoke test (source, headless Chrome)
         run: pnpm run smoke
+
+      - name: Smoke test (source, English locale)
+        run: pnpm run smoke:en
 
       - name: Build embedded single-file version
         run: pnpm run build
