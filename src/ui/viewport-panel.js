@@ -1,25 +1,28 @@
 // 视口历史组件(右侧):返回按钮 / 收起态胶囊 / 展开态面板(节点详情 + 导航树)。
-// 数据与导航逻辑在 app/viewport-history.js,这里只按视图模型渲染。
+// 数据与导航逻辑在 app/viewport-history.js,这里只按视图模型渲染。界面文案在语言包 ui.vp 里。
 
 import { mount, $ } from './dom.js';
+import { L } from '../i18n/index.js';
 import { annotateTerms } from './terms.js';
 import { nodeInfoHTML } from './node-info.js';
 
-const backBtn = mount(`<button id="vp-back" type="button" title="返回上一个视口（快捷键 Esc）">← 返回上一步 <span class="kbd">Esc</span></button>`);
-const pill = mount(`<button id="vp-pill" type="button" title="展开「视口历史」面板（导航树 + 节点详情）">视口历史 <span class="n" id="vp-pill-n"></span></button>`);
+const T = L.ui.vp;
+
+const backBtn = mount(`<button id="vp-back" type="button" title="${T.backTitle}">${T.back} <span class="kbd">Esc</span></button>`);
+const pill = mount(`<button id="vp-pill" type="button" title="${T.pillTitle}">${T.pill} <span class="n" id="vp-pill-n"></span></button>`);
 mount(`
 <aside id="vp-panel">
   <div class="vp-head">
-    <span class="vp-title">视口历史</span>
-    <span class="vp-act" id="vp-collapse" title="收起为胶囊（历史保留）">— 收起</span>
+    <span class="vp-title">${T.title}</span>
+    <span class="vp-act" id="vp-collapse" title="${T.collapseTitle}">${T.collapse}</span>
   </div>
   <div class="vp-acts">
-    <span class="vp-act" id="vp-map-btn" title="查看视口历史全景（快捷键 V）">⛶ 全景</span>
-    <span class="vp-act" id="vp-home" title="回到本步的起始视角">⌂ 起始视角</span>
-    <span class="vp-act" id="vp-clear" title="清空本步视口历史（只保留起始视角并飞回）">⌫ 清空</span>
+    <span class="vp-act" id="vp-map-btn" title="${T.mapBtnTitle}">${T.mapBtn}</span>
+    <span class="vp-act" id="vp-home" title="${T.homeTitle}">${T.home}</span>
+    <span class="vp-act" id="vp-clear" title="${T.clearTitle}">${T.clear}</span>
   </div>
   <div id="vp-detail"></div>
-  <div class="vp-sub" id="vp-sub">导航树（点击任意节点跳转）</div>
+  <div class="vp-sub" id="vp-sub">${T.navTree}</div>
   <div id="vp-tree"></div>
 </aside>`);
 
@@ -45,8 +48,8 @@ export function renderVpPanel(vm) {
   if (!show) return;
   const det = $('vp-detail'), m = vm.current && vm.current.meta;
   if (m && m.kind === 'node' && m.node) { det.innerHTML = nodeInfoHTML(m.node); annotateTerms(det); }
-  else det.innerHTML = '<div class="vp-empty">点击任意节点 <b>Zoom in</b> 查看详情</div>';
-  $('vp-sub').textContent = '导航树（点击任意节点跳转）' + (vm.gcCount ? ` · 已回收 ${vm.gcCount}` : '');
+  else det.innerHTML = `<div class="vp-empty">${T.detailEmpty}</div>`;
+  $('vp-sub').textContent = T.navTree + (vm.gcCount ? T.gcSuffix(vm.gcCount) : '');
   const tree = $('vp-tree'); tree.innerHTML = '';
   (function walk(node, d) {
     const row = document.createElement('div');

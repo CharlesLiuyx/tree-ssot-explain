@@ -1,9 +1,10 @@
-// 名词解释(纯数据):138 个概念词条,悬停带虚线下划线的词即弹出。
-// TERMS:词条名 → {en 英文/出处, d 通俗解释};多个别名用 | 分隔登记。
-// 加词条:在对应分组追加 defTerm 一行;ui/terms.js 会自动扫描页面文本并标注。
+// 名词解释(zh):138 个概念词条,悬停带虚线下划线的词即弹出。
+// TERMS:词条名 → {sub 副题(英文/出处), d 通俗解释};多个别名用 | 分隔登记。
+// 加词条:在对应分组追加 defTerm 一行,并在 en/terms.js 补同一概念(条数由 check-narrative 门禁对齐);
+// ui/terms.js 会自动扫描页面文本并标注。
 
 export const TERMS = {};
-function defTerm(names, en, d) { for (const n of names.split('|')) TERMS[n] = { en, d }; }
+function defTerm(names, sub, d) { for (const n of names.split('|')) TERMS[n] = { sub, d }; }
 
 // —— 模型自造的概念 ——
 defTerm('SSOT|单一事实源|事实源','Single Source of Truth','一条信息只有一个权威出处，其他地方都引用它，而不是各存一份。树根就是这个视角下所有决策的最终依据——根一乱，整棵树跟着乱。');

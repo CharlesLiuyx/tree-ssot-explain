@@ -27,6 +27,7 @@ import { initDots, renderDots } from '../ui/dots.js';
 import { updateEntropy, setMeterVisible } from '../ui/entropy-meter.js';
 import { initRotateToggle, renderRotateToggle } from '../ui/rotate-toggle.js';
 import { vpReset, vpDepth } from './viewport-history.js';
+import { L } from '../i18n/index.js';
 
 let revealTimer = null, cycleTimer = null;
 let platformWasVisible = false;
@@ -65,8 +66,7 @@ function cancelTimers() {
 }
 
 /* STEP 3 案例栏的待播文案(进场 / 拖回 0 时展示) */
-const caseIdleHTML = () =>
-  `<span class="dim">${TANGLES.length} 条真实纠缠待揭示——点 ▶ 逐条播放，拖动进度条定格任意一条，或「⚡ 全展示」一键点亮</span>`;
+const caseIdleHTML = () => L.ui.director.caseIdle(TANGLES.length);
 
 /* STEP 3:把揭示进度定格到第 n 条(0 = 尚未开始)。播放与手动拖动共用同一入口;
    拉满(n = 59)即视为「全展示」——停止播放,此后停格不再轮播。 */
@@ -80,8 +80,8 @@ function applyReveal(n) {
     setCaseBox(caseIdleHTML());
   } else {
     const t = TANGLES[state.revealed - 1];
-    setCaseBox(`<b>案例 ${state.revealed}/${TANGLES.length}</b>　${t.aName} ↔ ${t.bName}<br>${t.why}` +
-      (full ? `<br><span class="dim">✓ ${TANGLES.length} 条已全部展示——不再轮播,拖动进度条可回看任意一条</span>` : ''));
+    setCaseBox(L.ui.director.caseItem(state.revealed, TANGLES.length, t.aName, t.bName, t.why) +
+      (full ? L.ui.director.caseDone(TANGLES.length) : ''));
   }
   refreshTangleFlags(); rebuildTangles(); refreshNodes(); updateEntropy();
   renderCaseCtrl();
@@ -117,8 +117,7 @@ function toggleReveal() {
 function showGravityCase(i) {
   runtime.highlightGravity = i;
   const g = GRAVITY[i];
-  setCaseBox(`<b>引力对 ${i + 1}/${GRAVITY.length}</b>　${g.aName} ⚡ ${g.bName}` +
-    `<span class="gkind">${GRAVITY_KINDS[g.kind]}</span><br>${g.why}`);
+  setCaseBox(L.ui.director.gravItem(i + 1, GRAVITY.length, g.aName, g.bName, GRAVITY_KINDS[g.kind], g.why));
   renderGravList();
 }
 
@@ -207,7 +206,7 @@ export function setStage(n) {
 
   // STEP 3/4 进场一律静止待播:揭示/轮播都等用户点 ▶ 才开始(toggleReveal / toggleGravCycle)
   if (n === 3) setCaseBox(caseIdleHTML());
-  if (n === 4) setCaseBox(`<span class="dim">${GRAVITY.length} 对本征耦合待点名——点 ▶ 开始轮播，或直接点击下方列表任意一对</span>`);
+  if (n === 4) setCaseBox(L.ui.director.gravIdle(GRAVITY.length));
 }
 
 /* STEP 8:点击法则卡片 → 镜头飞到该法则的活现场,现场元素聚光脉冲若干秒;再点一次收回全景。

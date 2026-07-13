@@ -61,15 +61,16 @@ if (CHECK) {
   process.exit(0);
 }
 
-// 3. 组装:样式内联、去掉 importmap、模块入口替换为内联 bundle、调整加载提示文案
+// 3. 组装:样式内联、去掉 importmap、模块入口替换为内联 bundle、置 EMBEDDED 标志
+//    (boot 提示文案按语言与加载路径写在 index.html 的内联脚本里,由该标志分支)
 let out = html;
 for (const m of cssLinks) out = out.replace(m[0], '');
+if (!out.includes('var EMBEDDED = false')) throw new Error('index.html 中找不到 EMBEDDED 标志(内联启动脚本被改动?)');
 out = out
   .replace('</head>', `<style>\n${css}</style>\n</head>`)
   .replace(/<script type="importmap">[\s\S]*?<\/script>\s*/, '')
   .replace(/<script type="module" src="\.\/src\/main\.js"><\/script>/, () => `<script>\n${bundle}</script>`)
-  .replace('正在加载 3D 引擎…', '正在启动 3D 引擎…')
-  .replace(/three\.js 加载失败[^']*/, '3D 引擎启动失败 —— 请换用现代浏览器（Chrome / Edge / Safari 最新版）');
+  .replace('var EMBEDDED = false', 'var EMBEDDED = true');
 
 writeFileSync(OUT, out);
 console.log(`✓ ${OUT} 已生成（${(out.length / 1024).toFixed(0)} KB）`);

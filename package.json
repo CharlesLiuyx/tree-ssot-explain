@@ -9,8 +9,9 @@
     "check": "node scripts/build-embedded.mjs --check && node scripts/check-narrative.mjs",
     "build": "node scripts/build-embedded.mjs",
     "smoke": "node scripts/smoke-test.mjs",
+    "smoke:en": "node scripts/smoke-test.mjs --lang=en",
     "smoke:embedded": "node scripts/smoke-test.mjs --embedded",
-    "verify": "pnpm run check && pnpm run smoke && pnpm run build && pnpm run smoke:embedded",
+    "verify": "pnpm run check && pnpm run smoke && pnpm run smoke:en && pnpm run build && pnpm run smoke:embedded",
     "serve": "python3 -m http.server 4173"
   },
   "devDependencies": {

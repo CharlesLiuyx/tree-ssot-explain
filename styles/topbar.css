@@ -10,6 +10,11 @@
   transition:color .15s,border-color .15s,background .15s}
 #topbar .github-link:hover,#topbar .github-link:focus-visible{color:var(--txt);border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.08)}
 #topbar .github-link svg{width:14px;height:14px;display:block;fill:currentColor}
+#lang-toggle{height:21px;padding:0 9px;display:inline-flex;align-items:center;pointer-events:auto;cursor:pointer;
+  color:var(--sub);background:transparent;border:1px solid var(--line);border-radius:11px;
+  font:inherit;font-size:11px;font-weight:600;letter-spacing:.04em;line-height:1;
+  transition:color .15s,border-color .15s,background .15s}
+#lang-toggle:hover,#lang-toggle:focus-visible{color:var(--txt);border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.08)}
 #topbar .sub{color:var(--sub);font-size:12px;margin-top:2px}
 #topbar .keys{color:var(--sub);font-size:12px}
 #topbar .keys b{color:var(--txt);font-weight:600}

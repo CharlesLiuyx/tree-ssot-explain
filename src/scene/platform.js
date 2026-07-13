@@ -7,6 +7,7 @@ import { spinners } from '../core/registry.js';
 import { V3, makeCylinder, setCylinder, statik } from '../core/three-utils.js';
 import { Label } from './labels.js';
 import { scene } from './context.js';
+import { L } from '../i18n/index.js';
 
 export const platformGroup = new THREE.Group();
 platformGroup.position.set(0, 0, -20); platformGroup.visible = false;
@@ -41,7 +42,7 @@ export function buildPlatform() {
   });
   const el = document.createElement('div');
   el.className = 'tlabel plabel';
-  el.innerHTML = `<b>平台树 · 显式共享</b><span class="ssot">横切关注点的新 SSOT</span>`;
+  el.innerHTML = L.ui.scene.platformLabel;
   const lab = new Label(el); lab.position.set(0, 20.6, 0); lab.visible = false;
   platformGroup.add(lab);
   platLabelObj = lab;

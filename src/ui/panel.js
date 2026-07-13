@@ -2,8 +2,10 @@
 // STEP 7-8 策略开关与统计 / STEP 8 法则卡片 / STEP 9 演化路径与 ▶ 生长/速度控制 / 上下步导航。
 // 所有自动播放(揭示/轮播/生长)都必须点击 ▶ 才开始——进场只渲染静止态与待播提示。
 // 行为回调(切步/开关策略/拖案例进度/点引力对/点法则/切路径)由 app/director.js 装配时注入——组件只管渲染。
+// 界面文案在语言包 ui.panel / ui.caseCtrl / ui.nav 里。
 
 import { mount, $ } from './dom.js';
+import { L } from '../i18n/index.js';
 import { STAGES } from '../story/stages.js';
 import { LAWS } from '../story/laws.js';
 import { STRATS } from '../data/strategies.js';
@@ -14,6 +16,8 @@ import { GHOSTS } from '../data/ghosts.js';
 import { state, runtime } from '../core/state.js';
 import { annotateTerms } from './terms.js';
 
+const T = L.ui;
+
 mount(`
 <aside id="panel">
   <span id="stage-chip"></span>
@@ -22,17 +26,17 @@ mount(`
   <div id="case-box"></div>
   <div id="case-ctrl">
     <button id="case-play"></button>
-    <input id="case-range" type="range" min="0" value="0" step="1" title="拖动:播放到第几条">
+    <input id="case-range" type="range" min="0" value="0" step="1" title="${T.caseCtrl.rangeTitle}">
     <span id="case-count"></span>
-    <button id="case-all" title="一次点亮全部交织,不再轮播">⚡ 全展示</button>
+    <button id="case-all" title="${T.caseCtrl.allTitle}">${T.caseCtrl.allBtn}</button>
   </div>
   <div id="strategies">
     <div id="strat-list"></div>
     <div id="tangle-stats"></div>
   </div>
   <div id="nav">
-    <button id="prev">← 上一步</button>
-    <button id="next">下一步 →</button>
+    <button id="prev">${T.nav.prev}</button>
+    <button id="next">${T.nav.next}</button>
   </div>
 </aside>`);
 
@@ -66,7 +70,7 @@ export function renderPanel() {
   if (slot) { slot.appendChild(cb); slot.appendChild(cc); } // STEP 4:案例栏与 ▶ 上移到开篇段落之后,不必滚动就能看到点名
   $('strategies').style.display = (state.stage >= 7 && state.stage <= 8) ? 'block' : 'none';
   $('prev').style.visibility = state.stage === 0 ? 'hidden' : 'visible';
-  $('next').textContent = state.stage === STAGES.length - 1 ? '↺ 回到总览' : '下一步 →';
+  $('next').textContent = state.stage === STAGES.length - 1 ? T.nav.restart : T.nav.next;
   $('panel').scrollTop = 0;
   annotateTerms($('stage-body'));
   if (state.stage === 4) renderGravList();
@@ -83,7 +87,7 @@ export function renderGravList() {
       const head = document.createElement('div');
       head.className = 'gv-kind';
       const items = GRAVITY.map((g, i) => ({ g, i })).filter(x => x.g.kind === kind);
-      head.innerHTML = `<b>${GRAVITY_KINDS[kind]}</b><span>${GRAVITY_KIND_DESC[kind]} · ${items.length} 对</span>`;
+      head.innerHTML = T.panel.gravGroup(GRAVITY_KINDS[kind], GRAVITY_KIND_DESC[kind], items.length);
       box.appendChild(head);
       for (const { g, i } of items) {
         const b = document.createElement('button');
@@ -108,7 +112,7 @@ export function renderLaws() {
       b.className = 'law'; b.dataset.k = l.k;
       b.innerHTML = `<span class="law-fig">${l.svg}</span>` +
         `<span class="law-main"><span class="law-name">${l.name}<em></em></span>` +
-        `<span class="law-gist">${l.gist}</span><span class="law-scene">📍 ${l.scene}</span></span>`;
+        `<span class="law-gist">${l.gist}</span><span class="law-scene">${T.panel.lawScenePrefix}${l.scene}</span></span>`;
       b.onclick = () => handlers.onLaw(l.k);
       box.appendChild(b);
     }
@@ -117,7 +121,7 @@ export function renderLaws() {
   box.querySelectorAll('.law').forEach(b => {
     const on = b.dataset.k === runtime.lawFocus;
     b.classList.toggle('on', on);
-    b.querySelector('.law-name em').textContent = on ? '回全景 ↩' : '看现场 ↗';
+    b.querySelector('.law-name em').textContent = on ? T.panel.lawBack : T.panel.lawGo;
   });
 }
 
@@ -127,7 +131,7 @@ export function renderStrats() {
     const b = document.createElement('button');
     b.className = 'strat' + (state.strat[st.k] ? ' on' : '');
     if (state.stage === 8) b.setAttribute('disabled', '');
-    b.innerHTML = `<span class="s-name">${st.name}<em>${st.pct} 熵</em></span><span class="s-desc">${st.desc}</span>`;
+    b.innerHTML = `<span class="s-name">${st.name}<em>${T.panel.stratPct(st.pct)}</em></span><span class="s-desc">${st.desc}</span>`;
     b.onclick = () => handlers.onStratToggle(st.k);
     box.appendChild(b);
   });
@@ -150,13 +154,13 @@ export function renderCaseCtrl() {
     $('case-range').value = state.revealed;
     $('case-count').textContent = `${state.revealed}/${TANGLES.length}`;
     $('case-all').disabled = state.revealed >= TANGLES.length;
-    play.textContent = runtime.casePlaying ? '⏸ 暂停'
-      : state.revealed >= TANGLES.length ? '▶ 重播'
-      : state.revealed > 0 ? '▶ 继续' : '▶ 播放';
-    play.title = '逐条揭示纠缠案例(点击才开始播放)';
+    play.textContent = runtime.casePlaying ? T.caseCtrl.pause
+      : state.revealed >= TANGLES.length ? T.caseCtrl.replay
+      : state.revealed > 0 ? T.caseCtrl.resume : T.caseCtrl.play;
+    play.title = T.caseCtrl.playTitle;
   } else {
-    play.textContent = runtime.gravCycling ? '⏸ 停止轮播' : '▶ 轮播点名';
-    play.title = '每 5 秒点名一对引力(点击才开始轮播)';
+    play.textContent = runtime.gravCycling ? T.caseCtrl.cycleStop : T.caseCtrl.cycleStart;
+    play.title = T.caseCtrl.cycleTitle;
   }
 }
 
@@ -169,11 +173,10 @@ export function updateStats() {
     if (lastStats !== '') { lastStats = ''; el.textContent = ''; }
     return;
   }
-  const { red, amber, grey, plat } = runtime.tangleCounts;
   const html =
-    `偶然交织：<span class="r">${red} 条仍在纠缠</span> · <span class="am">${amber} 条已契约化</span> · <span class="dim">${grey} 条循环中消解</span> · <span class="g">${plat} 条已平台化</span><br>` +
-    `本征引力：${state.strat.fusion ? `<span class="g">${GRAVITY.length} 对已共域（金色气泡）</span>` : `<span class="mg">${GRAVITY.length} 对仍在拉扯</span>`}<br>` +
-    `图外真相：${state.strat.explicit ? `<span class="g">${GHOSTS.length} 个幽灵根已收编入库</span>` : `<span class="gh">${GHOSTS.length} 个幽灵根游离在外</span>`}`;
+    `${T.panel.statsTangles(runtime.tangleCounts)}<br>` +
+    `${T.panel.statsGravity(GRAVITY.length, !!state.strat.fusion)}<br>` +
+    T.panel.statsGhosts(GHOSTS.length, !!state.strat.explicit);
   if (html === lastStats) return;
   lastStats = html;
   el.innerHTML = html;
@@ -189,23 +192,22 @@ export function renderMetaUI() {
     const b = document.createElement('button');
     b.className = 'strat' + (i === runtime.metaPathIdx ? ' on' : '');
     b.innerHTML = `<span class="s-name">${p.name}<em>${p.pct}</em></span>`;
-    b.title = `${p.proto} —— ${p.desc}`; // 原型与简介进悬停提示,完整版在下方骨骼/假肢总结里
+    b.title = T.panel.metaPathTitle(p.proto, p.desc); // 原型与简介进悬停提示,完整版在下方骨骼/假肢总结里
     b.onclick = () => handlers.onMetaPath(i); // 点已选中的路径 = 重播生长
     box.appendChild(b);
   });
   // 播放/暂停 + 生长速度:生长必须点 ▶ 才开始;滑杆实时调速(生长中途调也平滑),↻ 重播 = 以当前速度重新长一遍
   const sp = document.createElement('div');
   sp.className = 'meta-speed';
-  sp.innerHTML = `<button class="meta-play" title="开始 / 暂停生长（长完后再点 = 从头重播）">${runtime.metaPlaying ? '⏸ 暂停' : '▶ 生长'}</button>` +
-    `<span>生长速度</span><input type="range" min="0.5" max="3" step="0.5" value="${runtime.metaSpeed}" title="拖动:调整树之树的生长速度"><b>${runtime.metaSpeed}×</b>` +
-    `<button class="meta-replay" title="以当前速度重新生长">↻ 重播</button>`;
+  sp.innerHTML = `<button class="meta-play" title="${T.panel.metaPlayTitle}">${runtime.metaPlaying ? T.panel.metaPause : T.panel.metaPlay}</button>` +
+    `<span>${T.panel.metaSpeed}</span><input type="range" min="0.5" max="3" step="0.5" value="${runtime.metaSpeed}" title="${T.panel.metaSpeedTitle}"><b>${runtime.metaSpeed}×</b>` +
+    `<button class="meta-replay" title="${T.panel.metaReplayTitle}">${T.panel.metaReplay}</button>`;
   const rng = sp.querySelector('input'), val = sp.querySelector('b');
   rng.oninput = () => { runtime.metaSpeed = +rng.value; val.textContent = runtime.metaSpeed + '×'; };
   sp.querySelector('.meta-play').onclick = () => handlers.onMetaPlay();
   sp.querySelector('.meta-replay').onclick = () => handlers.onMetaPath(runtime.metaPathIdx);
   box.appendChild(sp);
   const P = META_PATHS[runtime.metaPathIdx];
-  $('meta-traits').innerHTML =
-    `<div class="quote"><b style="color:#dfe6f3">${P.proto}</b> —— ${P.desc}<br><b class="g">骨骼</b>：${P.strong}<br><b class="r">假肢</b>：${P.weak}</div>`;
+  $('meta-traits').innerHTML = T.panel.metaTraits(P.proto, P.desc, P.strong, P.weak);
   annotateTerms(box); annotateTerms($('meta-traits'));
 }

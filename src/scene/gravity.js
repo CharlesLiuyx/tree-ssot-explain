@@ -14,6 +14,7 @@ import { dotSet, dotHide, addDotSlot, setNodeEmissive } from './pools.js';
 import { flexEdges } from './trees.js';
 import { Label } from './labels.js';
 import { scene } from './context.js';
+import { L } from '../i18n/index.js';
 
 const gravityGroup = new THREE.Group(); scene.add(gravityGroup);
 let fuseBlend = 0;               // 0..1,「共域」开关的平滑过渡
@@ -139,7 +140,7 @@ export function updateGravity(time, dt) {
     const g = GRAVITY[hlIdx];
     if (hlShown !== hlIdx) {
       hlShown = hlIdx;
-      hlEl.innerHTML = `<b>${g.aName} ⚡ ${g.bName}</b><span>本征耦合 · ${GRAVITY_KINDS[g.kind]}</span>`;
+      hlEl.innerHTML = L.ui.scene.gravNameplate(g.aName, g.bName, GRAVITY_KINDS[g.kind]);
     }
     nodeWorld(g.na, _v2); nodeWorld(g.nb, _v3);
     hlLabel.position.copy(_v2).add(_v3).multiplyScalar(.5);

@@ -7,8 +7,39 @@
 <!--
   轻壳:页面只保留启动提示与危险光晕两个前置元素。
   样式按组件拆在 styles/,数据·故事·场景·UI·编排拆在 src/(入口 src/main.js,UI 组件自行挂载 DOM)。
+  语言在下方内联脚本里解析(boot 提示必须在模块加载前就用对语言),模块侧经 src/i18n/ 消费 window.__lang。
   修改后运行 node scripts/build-embedded.mjs 重新生成单文件版 index-embedded.html。
 -->
+<script>
+/* 语言解析的唯一现场:?lang= → localStorage('tree-ssot-lang',与 src/i18n/index.js 同名) → 浏览器语言。
+   EMBEDDED 由 scripts/build-embedded.mjs 打包时改为 true(boot 文案按加载路径微调)。 */
+var EMBEDDED = false;
+(function () {
+  var known = { zh: 1, en: 1 };
+  var lang = null;
+  try { lang = new URLSearchParams(location.search).get('lang'); } catch (e) {}
+  if (!(lang in known)) { try { lang = localStorage.getItem('tree-ssot-lang'); } catch (e) {} }
+  if (!(lang in known)) lang = (navigator.language || '').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en';
+  window.__lang = lang;
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  window.__BOOT_TEXT = lang === 'zh' ? {
+    title: '多树形结构 · 节点交织模型',
+    loading: EMBEDDED ? '正在启动 3D 引擎…' : '正在加载 3D 引擎…',
+    timeout: EMBEDDED
+      ? '3D 引擎启动失败 —— 请换用现代浏览器（Chrome / Edge / Safari 最新版）'
+      : 'three.js 加载失败 —— 若是直接双击打开本文件，浏览器会拦截本地模块加载：请改用 index-embedded.html（可双击），或用本地服务器打开（见 README）',
+    errPrefix: '3D 引擎加载出错：', errSuffix: ' —— 请检查后刷新', errFallback: '资源加载失败',
+  } : {
+    title: 'Multi-Tree / Node-Entanglement Model',
+    loading: EMBEDDED ? 'Starting the 3D engine…' : 'Loading the 3D engine…',
+    timeout: EMBEDDED
+      ? 'The 3D engine failed to start — please switch to a modern browser (latest Chrome / Edge / Safari)'
+      : 'three.js failed to load — if you double-clicked this file, the browser blocks local module loading: open index-embedded.html instead (double-click works), or serve it over HTTP (see README)',
+    errPrefix: '3D engine failed to load: ', errSuffix: ' — please check and reload', errFallback: 'a resource failed to load',
+  };
+  document.title = window.__BOOT_TEXT.title;
+})();
+</script>
 <link rel="stylesheet" href="./styles/base.css">
 <link rel="stylesheet" href="./styles/topbar.css">
 <link rel="stylesheet" href="./styles/panel.css">
@@ -18,18 +49,19 @@
 <link rel="stylesheet" href="./styles/viewport.css">
 </head>
 <body>
-<div id="boot">正在加载 3D 引擎…</div>
+<div id="boot"></div>
 <div id="vignette"></div>
 
 <script>
+document.getElementById('boot').textContent = window.__BOOT_TEXT.loading;
 window.__bootTimer=setTimeout(function(){
   var b=document.getElementById('boot');
-  if(b&&!window.__booted){b.textContent='three.js 加载失败 —— 若是直接双击打开本文件，浏览器会拦截本地模块加载：请改用 index-embedded.html（可双击），或用本地服务器打开（见 README）';}
+  if(b&&!window.__booted){b.textContent=window.__BOOT_TEXT.timeout;}
 },9000);
 window.addEventListener('error',function(e){
-  (window.__errs=window.__errs||[]).push((e.message||'资源加载失败')+' @ '+(e.filename||'')+':'+(e.lineno||''));
+  (window.__errs=window.__errs||[]).push((e.message||window.__BOOT_TEXT.errFallback)+' @ '+(e.filename||'')+':'+(e.lineno||''));
   var b=document.getElementById('boot');
-  if(b&&!window.__booted){b.textContent='3D 引擎加载出错：'+(e.message||'资源加载失败')+' —— 请检查后刷新';clearTimeout(window.__bootTimer);}
+  if(b&&!window.__booted){b.textContent=window.__BOOT_TEXT.errPrefix+(e.message||window.__BOOT_TEXT.errFallback)+window.__BOOT_TEXT.errSuffix;clearTimeout(window.__bootTimer);}
 },true);
 window.addEventListener('unhandledrejection',function(e){
   (window.__errs=window.__errs||[]).push('Promise: '+(e.reason&&e.reason.message||e.reason));

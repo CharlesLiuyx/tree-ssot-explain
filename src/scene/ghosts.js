@@ -11,6 +11,7 @@ import { V3, expK, statik, makeLine2, setLine2, _v1, _v2, _v3 } from '../core/th
 import { setNodeEmissive } from './pools.js';
 import { Label } from './labels.js';
 import { scene } from './context.js';
+import { L } from '../i18n/index.js';
 
 export const boundaryCenter = V3(...BOUNDARY_CENTER);
 const ghostGroup = new THREE.Group(); ghostGroup.position.copy(boundaryCenter); scene.add(ghostGroup);
@@ -26,7 +27,7 @@ let treeRingMat = null, treeDiscMat = null;
 
 export function buildGhosts() {
   const bEl = document.createElement('div'); bEl.className = 'glabel';
-  bEl.innerHTML = '<b>仓库边界</b><span>环内 = AI 能读到的全部文本</span><span>虚线小环 = 每棵树都可以自成仓库 / 子仓库</span>';
+  bEl.innerHTML = L.ui.scene.boundaryLabel;
   bLab = new Label(bEl); bLab.position.set(0, 2.4, 86); bLab.visible = false;
   ghostGroup.add(bLab);
 
@@ -61,7 +62,7 @@ export function buildGhosts() {
     return g;
   });
   const trEl = document.createElement('div'); trEl.className = 'glabel';
-  trEl.innerHTML = '<b>每棵树可自成一仓</b><span>虚线环 = 这棵树自己的仓库边界 · 独立仓库或子仓库</span>';
+  trEl.innerHTML = L.ui.scene.treeRingLabel;
   trLab = new Label(trEl); trLab.position.set(0, 1.6, treeRings[1].userData.radius + 1.4); trLab.visible = false;
   trees[1].group.add(trLab);
 
@@ -82,7 +83,7 @@ export function buildGhosts() {
     ghostGroup.add(g.wire); ghostGroup.add(g.inner);
     spinners.push({ obj: g.wire, axis: V3(.2, 1, .3).normalize(), speed: .3 });
     const el = document.createElement('div'); el.className = 'glabel';
-    el.innerHTML = `<b>👻 ${g.n}</b><span>幽灵根 · 真正的 SSOT 在图外</span>`;
+    el.innerHTML = L.ui.scene.ghostLabel(g.n);
     g.label = new Label(el); g.label.position.set(0, 4.2, 0); g.label.visible = false;
     g.wire.add(g.label);
     g.dashed = []; g.solid = [];

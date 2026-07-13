@@ -3,7 +3,8 @@
 // 全程收集 console 错误 / 页面异常 / 资源加载失败,并逐步截图;通过后清理截图,失败时保留。
 // 把「人肉开浏览器点一遍」压缩成一条 30 秒内的命令,任何一步报错即退出码非零。
 //
-// 用法:pnpm run smoke              测源码版(内置静态服务器 + http)
+// 用法:pnpm run smoke              测源码版(内置静态服务器 + http,默认 zh)
+//       pnpm run smoke:en          测源码版英文语言包(--lang=en,经 ?lang= 注入)
 //       pnpm run smoke:embedded    测单文件版(file:// 直开,与「双击打开」同路径;需先 pnpm run build)
 // 依赖:系统已装 Chrome / Chromium(不额外下载浏览器);特殊路径用环境变量 CHROME_PATH 指定。
 
@@ -12,10 +13,15 @@ import { readFile, mkdir, rm, rmdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import puppeteer from 'puppeteer-core';
-import { DOT_NAMES } from '../src/story/stages.js';
+import { zh } from '../src/i18n/locales/zh/index.js';
+import { en } from '../src/i18n/locales/en/index.js';
 
 const EMBEDDED = process.argv.includes('--embedded');
-const MODE = EMBEDDED ? 'embedded' : 'source';
+const LANG = (process.argv.find(a => a.startsWith('--lang=')) ?? '--lang=zh').split('=')[1];
+const PACK = { zh, en }[LANG];
+if (!PACK) { console.error(`✗ 未知语言:${LANG}(可选 zh / en)`); process.exit(1); }
+const DOT_NAMES = PACK.dotNames;
+const MODE = `${EMBEDDED ? 'embedded' : 'source'}-${LANG}`;
 const ARTIFACT_ROOT = 'test-artifacts';
 const SHOT_DIR = join(ARTIFACT_ROOT, MODE);
 const BOOT_TIMEOUT = 30_000;   // 引擎启动上限(本地加载,通常 <2s)
@@ -80,6 +86,7 @@ if (EMBEDDED) {
   server = await serveStatic(process.cwd());
   url = `http://127.0.0.1:${server.address().port}/`;
 }
+url += `?lang=${LANG}`; // 语言经 URL 参数注入(与 index.html 内联解析一致;file:// 同样支持)
 console.log(`冒烟测试[${MODE}] → ${url}`);
 
 await mkdir(SHOT_DIR, { recursive: true });

@@ -30,6 +30,14 @@
 #rotate-toggle .rt-ico{font-size:12px;line-height:1}
 #rotate-toggle.paused{color:var(--gold);border-color:rgba(255,209,102,.5)}
 
+/* 底部三件套(旋转开关/导航点/图例)同排:导航条宽度随语言变化(en 更宽),
+   窄屏下把两角的元素上浮一格让位,避免与居中的导航条重叠 */
+@media (max-width:1700px){
+  #legend{bottom:64px}
+}
+@media (max-width:1200px){
+  #rotate-toggle{bottom:64px}
+}
 @media (max-width:980px){
   #meter{width:200px}
   #dots{max-width:92vw;overflow-x:auto}

@@ -12,6 +12,7 @@ import { renderer, camera, controls, flyCamera } from '../scene/context.js';
 import { platformGroup, platNodes, platWorld } from '../scene/platform.js';
 import { initVpPanel, renderVpPanel } from '../ui/viewport-panel.js';
 import { initVpMap, renderVpMap, setVpMapOpen } from '../ui/viewport-map.js';
+import { L } from '../i18n/index.js';
 
 let vpRoot = null, vpCurrent = null, vpSeq = 0, vpGCCount = 0;
 let vpPanelOpen = false;  // 「视口历史」面板默认收起为胶囊;展开/收起是用户意图,跨步骤保留
@@ -35,7 +36,7 @@ function render() {
 
 export function vpReset(pos, target, label) {  // 切换步骤时重置为一棵新树(根 = 本步起始视角)
   vpSeq = 0; vpGCCount = 0;
-  vpRoot = makeVP(pos, target, label || '起始视角', { kind: 'stage' });
+  vpRoot = makeVP(pos, target, label || L.ui.vp.startLabel, { kind: 'stage' });
   vpCurrent = vpRoot;
   closeMap();
   render();

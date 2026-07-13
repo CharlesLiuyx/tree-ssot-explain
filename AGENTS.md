@@ -31,18 +31,20 @@ git hooks in `.githooks/` via the `prepare` script).
 
 - `pnpm run check` (~0.3s): esbuild static pass over the whole import graph — catches syntax
  errors, broken import paths, and missing stylesheet links — plus `scripts/check-narrative.mjs`,
- which asserts that counts hard-coded in narrative copy (`src/story/`, README) match values
- derived from `src/data/` (tangle/gravity/ghost/path/term counts, missing-tree claims, etc.).
+ which asserts that counts hard-coded in narrative copy (both locale packs, README) match values
+ derived from `src/data/` (tangle/gravity/ghost/path/term counts, missing-tree claims, etc.),
+ and that the zh/en locale packs' key sets match the data structures in both directions.
  Run it after every edit; when it fails it prints the expected value and where to fix.
-- `pnpm run smoke` (~30s): headless-Chrome smoke test — boots the source version, steps through
-  all 10 narrative stages with ←/→, fails on any console error / uncaught exception / failed
-  request, and keeps per-stage screenshots in `test-artifacts/` only on failure (gitignored);
-  successful runs clean them up. Uses the system Chrome (no browser download); override the binary
-  with `CHROME_PATH` if needed.
+- `pnpm run smoke` (~30s): headless-Chrome smoke test — boots the source version (Chinese),
+  steps through all 10 narrative stages with ←/→, fails on any console error / uncaught
+  exception / failed request, and keeps per-stage screenshots in `test-artifacts/` only on
+  failure (gitignored); successful runs clean them up. Uses the system Chrome (no browser
+  download); override the binary with `CHROME_PATH` if needed.
+- `pnpm run smoke:en` (~30s): same, but with the English locale (`?lang=en`).
 - `pnpm run smoke:embedded` (~30s): same, but loads the built `index-embedded.html` over
   `file://` (the double-click path). Requires `pnpm run build` first.
-- `pnpm run verify`: check → smoke → build → smoke:embedded — the same gate CI runs before
-  deploying to GitHub Pages (`.github/workflows/deploy-pages.yml`).
+- `pnpm run verify`: check → smoke → smoke:en → build → smoke:embedded — the same gate CI runs
+  before deploying to GitHub Pages (`.github/workflows/deploy-pages.yml`).
 - There is no linter config. For UI changes, also verify visually in a browser (narrative ←/→
   keys and node click-to-zoom interactions) — the smoke test does not cover click-to-zoom.
 
@@ -56,11 +58,26 @@ git hooks in `.githooks/` via the `prepare` script).
 
 ## Code layout & rules
 
-- Five layers, dependencies point downward only, zero cycles:
-  `main → app → ui / scene → core / story / data / config`. Put changes in the right layer:
-  new tree / tangle / gravity pair → `src/data/`; narrative copy or term glossary →
-  `src/story/`; visual style → `styles/`; a new strategy → register in `data/strategies.js`
-  plus its visual effect in `scene/`.
+- Layered, dependencies point downward only, zero cycles:
+  `main → app → ui / scene → core / story / data → i18n / config`. Put changes in the right layer:
+  new tree / tangle / gravity pair → structure in `src/data/` **plus copy in every locale pack**
+  (`src/i18n/locales/zh/` and `en/` — key sets are gated by `pnpm run check`); narrative copy,
+  UI strings, or term glossary → `src/i18n/locales/<code>/` only; visual style → `styles/`;
+  a new strategy → register in `data/strategies.js`, add copy per locale, plus its visual
+  effect in `scene/`.
+
+## i18n
+
+- Language resolution happens once, in `index.html`'s inline script (`?lang=` → localStorage
+  `tree-ssot-lang` → `navigator.language`); modules consume `window.__lang` via `src/i18n/index.js`
+  (Node falls back to zh). Switching language persists the choice + current stage and reloads —
+  stage state is a pure function of the index, so it restores exactly.
+- `src/data/` holds structure only; each data file hydrates display text from the active locale
+  pack at load time and fails fast (naming the missing key) if copy is absent. Adding a language =
+  copy `locales/zh/` → translate → register in `LOCALES` (src/i18n/index.js) and in the inline
+  `known` table of index.html, then add a phrase adapter in `scripts/check-narrative.mjs`.
+- English copy must be idiomatic — translate meaning and register, not word order. Keep counts in
+  copy matching the canonical phrases the narrative check enforces (it prints them on failure).
 - **Narrative stage state must be reversible**: each step's state is (as far as possible) a
   pure function of the step index — stepping ←/→ back and forth must land in the identical
   state. Don't accumulate stage state imperatively.

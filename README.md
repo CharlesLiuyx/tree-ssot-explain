@@ -64,14 +64,29 @@ pnpm run build  # 即 node scripts/build-embedded.mjs，产出 index-embedded.ht
 依赖清单（`vendor/`，three.js r160，来源 cdn.jsdelivr.net）：
 `three.module.js`、`controls/OrbitControls.js`。
 
+## 多语言（i18n）
+
+界面与全部叙事文案支持 **中文 / English** 双语：
+
+- **语言选择**：URL 参数 `?lang=zh|en` → 上次选择（localStorage）→ 浏览器语言（zh\* 为中文，其余英文）。
+  解析只发生在 `index.html` 的内联脚本里（boot 提示必须在模块加载前就用对语言），模块侧经 `src/i18n/` 消费。
+- **切换**：顶栏右侧语言按钮。切换 = 记住选择与当前步骤后整页重载——叙事状态是步骤索引的纯函数，
+  重载后精确回到切换前所在步骤，零状态残留。
+- **架构**：`src/data/`（结构）与 `src/i18n/locales/<语言>/`（文案）彻底分离，数据文件在启动时按当前
+  语言水合文案；缺文案启动即报错指名道姓，两包与数据的键集合双向一致由 `pnpm run check` 门禁强制。
+- **新增语言**：复制 `src/i18n/locales/zh/` 为 `<code>/` 逐文件翻译，在 `src/i18n/index.js` 的
+  `LOCALES` 登记一行，并在 `index.html` 内联脚本的 `known` 表加上语言码——校验会自动覆盖新语言的
+  键集合对齐（叙事计数的规范短语需在 `scripts/check-narrative.mjs` 里为新语言补一组适配）。
+
 ## 验证（改完代码跑什么）
 
 | 命令 | 耗时 | 覆盖范围 |
 |---|---|---|
-| `pnpm run check` | ~0.2s | 静态校验：语法错误、import 路径写错、样式链接失效（esbuild 解析全图，不写产物） |
-| `pnpm run smoke` | ~30s | 冒烟测试：无头 Chrome 真实加载源码版 → 等引擎启动 → ←/→ 走完 10 步叙事，收集一切 console 错误/未捕获异常/加载失败；逐步截图只在失败时保留到 `test-artifacts/`，通过后自动清理 |
-| `pnpm run smoke:embedded` | ~30s | 同上，但测单文件版且走 `file://`（与用户「双击打开」同路径；需先 build） |
-| `pnpm run verify` | ~1min | 全量：check → smoke → build → smoke:embedded，等价于 CI 的部署门禁 |
+| `pnpm run check` | ~0.3s | 静态校验：语法错误、import 路径写错、样式链接失效（esbuild 解析全图，不写产物）+ 叙事一致性（文案计数与数据推导值对齐，zh / en 语言包键集合与数据双向一致） |
+| `pnpm run smoke` | ~30s | 冒烟测试：无头 Chrome 真实加载源码版（中文）→ 等引擎启动 → ←/→ 走完 10 步叙事，收集一切 console 错误/未捕获异常/加载失败；逐步截图只在失败时保留到 `test-artifacts/`，通过后自动清理 |
+| `pnpm run smoke:en` | ~30s | 同上，但走英文语言包（`?lang=en`） |
+| `pnpm run smoke:embedded` | ~30s | 同 smoke，但测单文件版且走 `file://`（与用户「双击打开」同路径；需先 build） |
+| `pnpm run verify` | ~2min | 全量：check → smoke → smoke:en → build → smoke:embedded，等价于 CI 的部署门禁 |
 
 冒烟测试不下载浏览器，直接复用系统 Chrome/Chromium；特殊安装路径用环境变量
 `CHROME_PATH` 指定。日常节奏：改一行跑 `check`，提交前跑 `verify`。
@@ -99,30 +114,35 @@ GitHub Pages 公开访问地址：
 零循环依赖——改哪类东西，只动哪一层：
 
 ```
-index.html            轻壳：boot 兜底 + importmap + <link> 样式 + <script src=src/main.js>
+index.html            轻壳：语言解析 + boot 兜底 + importmap + <link> 样式 + <script src=src/main.js>
 docs/                 规范与细则（渐进式披露：本 README 只留摘要，细节在 docs/ 按需下钻）
 scripts/
   build-embedded.mjs   esbuild 打包 src/main.js 并内联全部 CSS/JS 为单文件版；--check 只校验不产出
-  smoke-test.mjs       冒烟测试：无头 Chrome 加载页面走完 10 步叙事，零错误才放行
+  check-narrative.mjs  叙事一致性门禁：文案计数对齐数据推导值，zh/en 语言包键集合双向对齐
+  smoke-test.mjs       冒烟测试：无头 Chrome 加载页面走完 10 步叙事，零错误才放行（--lang=en 测英文）
   check-commit-msg.mjs Commit message 校验（.githooks/commit-msg 调用，规则见 docs/COMMIT_CONVENTION.md）
 styles/               CSS 按组件拆分（base / topbar / panel / hud / tooltip / labels / viewport）
 src/
   config.js           调色板、树形体型、布局锚点、叙事焦点等常量
-  data/               【纯数据】树定义 / 交织 / 引力对 / 幽灵根 / 平台服务 / 策略 / 演化路径
-  story/              【纯文案】十步叙事（含机位）/ 138 条名词解释
+  i18n/               【纯文案】语言解析 + 语言包：locales/zh|en/ 逐文件对照 data|story 的结构
+                      （十步叙事 / 138 条名词解释 / 树与节点名 / 交织·引力·幽灵根·路径案例 / UI 文案）
+  data/               【纯结构】树定义 / 交织 / 引力对 / 幽灵根 / 平台服务 / 策略 / 演化路径
+                      （启动时按当前语言从 i18n 水合文案，缺文案即报错）
+  story/              【叙事结构】十步机位与文案装配 / 法则卡片图示与机位
   core/               【基础设施】state+runtime（跨系统状态 SSOT）/ 补间 / three 工具 / 场景登记表
   scene/              【3D 系统】context（渲染器/相机/帧率调度）/ pools（节点与装饰的实例化池）/
                       labels（轻量 2D 标签）/ trees / tangles / gravity / ghosts / platform /
                       strategies-fx / collapse / meta-tree / appearance
   ui/                 【UI 组件】每个组件自带 DOM 模板与渲染：panel / dots / entropy-meter /
-                      legend / topbar / rotate-toggle / tooltip / node-info / terms / viewport-*
+                      legend / topbar（含语言切换）/ rotate-toggle / tooltip / node-info / terms / viewport-*
   app/                【编排】director（setStage 总调度）/ viewport-history / hover / keymap / loop
   main.js             唯一装配点：按依赖顺序显式建场景、注入 UI 回调、启动主循环
 ```
 
-常见改动的落点：加一棵树 / 一条交织 → 只改 `src/data/`；改文案或名词解释 → 只改 `src/story/`；
-调 UI 样式 → 只改 `styles/`；加一个策略 → `data/strategies.js` 登记 + `scene/` 加视觉效果。
-数据引用（节点 gid）在启动时校验，写错会直接报错指出缺失节点。
+常见改动的落点：加一棵树 / 一条交织 → `src/data/` 加结构 + `src/i18n/locales/*/` 各语言补文案；
+改文案或名词解释 → 只改 `src/i18n/locales/<语言>/`；调 UI 样式 → 只改 `styles/`；
+加一个策略 → `data/strategies.js` 登记 + `scene/` 加视觉效果 + 各语言包补文案。
+数据引用（节点 gid）与语言包键集合都在启动/校验时检查，写错会直接报错指出缺失项。
 
 ## 叙事结构（10 步，← / → 或底部导航切换）
 

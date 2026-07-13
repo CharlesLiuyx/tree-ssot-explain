@@ -30,6 +30,8 @@ import { startLoop } from './app/loop.js';
 import { annotateTerms } from './ui/terms.js';
 import { legendEl } from './ui/legend.js';
 import { meterEl } from './ui/entropy-meter.js';
+import { STAGES } from './story/stages.js';
+import { consumeResumeStage } from './i18n/index.js';
 
 /* 1. 场景:建树 → 登记交织(长光环) → 登记引力 → 枝干烘焙(依赖引力标记) → 幽灵根 → 平台树
       → 实例化池构建(节点/描边/护壳/光环/发光点)与纠缠管道池预分配 */
@@ -48,8 +50,9 @@ initViewportHistory({ afterRender: syncRotate }); // 聚焦节点时暂停总览
 initHover();
 initKeymap();
 
-/* 3. 启动:预编译全部着色器(把编译毛刺挡在首帧之前),再进主循环 */
-setStage(0);
+/* 3. 启动:预编译全部着色器(把编译毛刺挡在首帧之前),再进主循环。
+      起始步骤默认 0;仅语言切换重载时恢复到切换前所在步骤(步骤状态是索引的纯函数,可精确复位) */
+setStage(consumeResumeStage(STAGES.length));
 renderer.compile(scene, camera);
 annotateTerms(legendEl);
 annotateTerms(meterEl);

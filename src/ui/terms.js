@@ -1,6 +1,8 @@
-// 术语标注:扫描容器内文本节点,把 story/terms.js 里登记的词包成 .term(悬停出解释,见 tooltip.js)。
+// 术语标注:扫描容器内文本节点,把当前语言包 terms 里登记的词包成 .term(悬停出解释,见 tooltip.js)。
 
-import { TERMS } from '../story/terms.js';
+import { L } from '../i18n/index.js';
+
+const TERMS = L.terms;
 
 const TERM_RE = (() => {
   const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

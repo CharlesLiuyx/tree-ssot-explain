@@ -14,6 +14,7 @@ import { V3, makeCylinder, setCylinder, makeLine2, setLine2, disposeGroup, _v2, 
 import { Label } from './labels.js';
 import { scene } from './context.js';
 import { boundaryCenter } from './ghosts.js';
+import { L } from '../i18n/index.js';
 
 export const metaGroup = new THREE.Group();
 metaGroup.position.copy(boundaryCenter); metaGroup.visible = false; scene.add(metaGroup);
@@ -69,7 +70,7 @@ export function buildMetaTree() {
     const el = document.createElement('div');
     el.className = 'mlabel';
     el.innerHTML = `<span style="color:#${color.toString(16).padStart(6, '0')}"><span class="seq">${i + 1}</span>${tr.def.short}</span>` +
-      (s.p ? '' : '<span class="mroot">元根 · 第一性假设</span>');
+      (s.p ? '' : `<span class="mroot">${L.ui.scene.metaRootBadge}</span>`);
     const lab = new Label(el); lab.position.set(0, tr.def.kind === 'biz' ? 4.6 : 4.1, 0); lab.visible = false;
     orb.add(lab);
     let edge = null, parentPos = null;

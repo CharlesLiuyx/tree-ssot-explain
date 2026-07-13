@@ -1,15 +1,13 @@
-// 七种手术(纯数据):STEP 7 的策略开关。
-// STRAT_FACTORS:开启后语义熵的乘法因子(0.65 = 降 35%);STRATS:按钮文案。
+// 七种手术(纯结构):STEP 7 的策略开关。
+// STRAT_FACTORS:开启后语义熵的乘法因子(0.65 = 降 35%);STRATS 的按钮文案来自语言包,
+// pct(「−35%」)由因子推导——数值只有一个出处。
 // k 是策略键,同时被 core/state.js(开关状态)与 scene 各系统(视觉效果)引用。
+
+import { L, req } from '../i18n/index.js';
 
 export const STRAT_FACTORS = { layer: .65, sdd: .75, tdd: .8, loops: .85, platform: .5, fusion: .85, explicit: .6 };
 
-export const STRATS = [
-  {k:'layer', name:'分层 Layering', pct:'−35%', desc:'把树排成层，跨树调用必须穿过显式的接口环——偶然交织退化成层间契约。但注意：<b>引力对拉不开</b>，硬分层只会把枝干越拉越长。'},
-  {k:'sdd', name:'SDD · Spec 驱动', pct:'−25%', desc:'强化每棵树的根：任何节点的含义都能顺着 spec 推导出来（金色脉冲自根流向全树），AI 不必读遍全图去猜。'},
-  {k:'tdd', name:'TDD · 测试锚定', pct:'−20%', desc:'用测试钉死叶子的行为（绿色护栏壳）。节点即使被多棵树引用，行为也不会漂移——这是「放心让 AI 写」的前提。'},
-  {k:'loops', name:'Loops · 小步循环', pct:'−15%', desc:'给纠缠限速：每轮循环只允许长出有限的新纠缠，轮末必须清理（雷达扫过，部分红线转灰）——密度始终压在 attention 预算之下。'},
-  {k:'platform', name:'平台化 · 显式共享', pct:'−50%', desc:'把权限、门控这类横切能力抽成独立的平台树，其他树只依赖它的根——隐式的纠缠，变成显式的依赖。'},
-  {k:'fusion', name:'共域 · 承认引力', pct:'−15%', desc:'对<b>本征耦合</b>停止拉扯：把引力对放进同一个模块、同一层——若两棵树已各自拆成仓库，就让它们住进同一个仓库。一起设计、一起测试、同一个 owner，金色气泡 = 合法同居。'},
-  {k:'explicit', name:'显式化 · 收编幽灵根', pct:'−40%', desc:'把<i>图外真相</i>拉回图内：DI 收敛成一份显式装配文件、事件换成类型化订阅表、旧文件采样成 golden-file 测试、配置写成 schema、不成文的接口行为锁进契约测试——幽灵根被收进仓库边界，虚线变实线。'},
-];
+export const STRATS = Object.keys(STRAT_FACTORS).map(k => {
+  const t = req(L.strategies, k, 'strategies');
+  return { k, name: t.name, desc: t.desc, pct: `−${Math.round((1 - STRAT_FACTORS[k]) * 100)}%` };
+});

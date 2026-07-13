@@ -8,6 +8,7 @@ import { TREE_DEFS } from '../data/trees.js';
 import { nodesById, trees, allNodes, treeById, pulses, labelEls } from '../core/registry.js';
 import { V3, rng, makeCylinder, setCylinder, bakeCylinders, statik } from '../core/three-utils.js';
 import { addNodeSlot, addRimSlot, addShellSlot, addDotSlot, addRingSlot } from './pools.js';
+import { L } from '../i18n/index.js';
 import { Label } from './labels.js';
 import { scene } from './context.js';
 
@@ -75,7 +76,7 @@ export function buildTrees() {
     // 树标签
     const el = document.createElement('div');
     el.className = 'tlabel';
-    el.innerHTML = `<b style="color:#${def.color.toString(16).padStart(6, '0')}">${def.name}</b><span class="ssot">root = SSOT</span><i>${def.constraint}<br>${def.tradeoff}</i>`;
+    el.innerHTML = `<b style="color:#${def.color.toString(16).padStart(6, '0')}">${def.name}</b><span class="ssot">${L.ui.scene.rootSsot}</span><i>${def.constraint}<br>${def.tradeoff}</i>`;
     const lab = new Label(el); lab.position.set(0, lvlOf(def.kind, 0).y + 3.4, 0); group.add(lab);
     labelEls.push(el);
   });

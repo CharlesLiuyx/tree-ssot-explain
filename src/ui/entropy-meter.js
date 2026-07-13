@@ -2,6 +2,7 @@
 // updateEntropy() 重算目标值(状态变化时调),paintEntropy(dt) 平滑逼近并绘制(主循环每帧调,收敛后零 DOM 写)。
 
 import { mount, $ } from './dom.js';
+import { L } from '../i18n/index.js';
 import { TANGLES } from '../data/tangles.js';
 import { STRAT_FACTORS } from '../data/strategies.js';
 import { state } from '../core/state.js';
@@ -9,10 +10,10 @@ import { expK } from '../core/three-utils.js';
 
 export const meterEl = mount(`
 <div id="meter">
-  <div class="m-title">语义熵 · AI 混淆度</div>
+  <div class="m-title">${L.ui.meter.title}</div>
   <div class="m-row"><span id="entropy-val">0%</span><span id="entropy-zone"></span></div>
   <div class="bar"><div id="entropy-fill"></div><i style="left:30%"></i><i style="left:65%"></i></div>
-  <div class="zones"><span class="z-ok">可驾驭</span><span class="z-mid">吃力·需人在环</span><span class="z-bad">崩塌区</span></div>
+  <div class="zones"><span class="z-ok">${L.ui.meter.scaleOk}</span><span class="z-mid">${L.ui.meter.scaleMid}</span><span class="z-bad">${L.ui.meter.scaleBad}</span></div>
 </div>`);
 
 let entropyTarget = 0, entropyShown = -1, lastZone = '';
@@ -43,7 +44,7 @@ export function paintEntropy(dt) {
   const zone = entropyShown < 30 ? 'ok' : entropyShown < 65 ? 'mid' : 'bad';
   if (zone !== lastZone) { // 区间文案/配色只在跨区时写
     lastZone = zone;
-    const [txt, color] = zone === 'ok' ? ['AI 可驾驭', '#5dd39e'] : zone === 'mid' ? ['吃力 · 需人在环', '#ffb84d'] : ['混淆崩塌区', '#ff4d6d'];
+    const [txt, color] = zone === 'ok' ? [L.ui.meter.zoneOk, '#5dd39e'] : zone === 'mid' ? [L.ui.meter.zoneMid, '#ffb84d'] : [L.ui.meter.zoneBad, '#ff4d6d'];
     elZone.textContent = txt; elZone.style.color = color; elVal.style.color = color;
     elFill.style.background = `linear-gradient(90deg,#5dd39e,${color})`;
   }

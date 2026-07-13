@@ -2,7 +2,9 @@
 // 3D 对象详情(app/hover.js 推送)与名词解释(.term 词条,本组件自理)。
 
 import { mount } from './dom.js';
-import { TERMS } from '../story/terms.js';
+import { L } from '../i18n/index.js';
+
+const TERMS = L.terms;
 
 const el = mount('<div id="tooltip"></div>');
 
@@ -27,7 +29,7 @@ addEventListener('mouseover', e => {
   termEl = t;
   if (t && TERMS[t.textContent]) {
     const info = TERMS[t.textContent];
-    show(`<b>${t.textContent}</b><span class="tt-kind">${info.en || '名词解释'}</span><div class="tt-desc">${info.d}</div>`);
+    show(`<b>${t.textContent}</b><span class="tt-kind">${info.sub || L.ui.tooltip.termFallback}</span><div class="tt-desc">${info.d}</div>`);
   } else if (!t) {
     hide();
   }

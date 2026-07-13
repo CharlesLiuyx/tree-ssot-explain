@@ -7,6 +7,7 @@ import { nodesById, spinners, nodeWorld } from '../core/registry.js';
 import { V3, disposeGroup } from '../core/three-utils.js';
 import { Label } from './labels.js';
 import { scene, camera } from './context.js';
+import { L } from '../i18n/index.js';
 
 const aiGroup = new THREE.Group(); aiGroup.visible = false; scene.add(aiGroup);
 let orb = null, beams = [], focusRing = null;
@@ -30,7 +31,7 @@ export function buildCollapse() {
   orb.add(shellM); orb.add(core); orb.position.copy(orbPos);
   spinners.push({ obj: shellM, axis: V3(.3, 1, .2).normalize(), speed: .6 });
   const el = document.createElement('div');
-  el.className = 'ailabel'; el.innerHTML = 'AI<span>attention 预算有限</span>';
+  el.className = 'ailabel'; el.innerHTML = L.ui.scene.aiLabel;
   const lab = new Label(el); lab.position.set(0, 2.6, 0); orb.add(lab);
   aiGroup.add(orb);
 
