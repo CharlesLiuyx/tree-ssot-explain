@@ -45,8 +45,8 @@
 
 | 文件 | 打开方式 | 说明 |
 |---|---|---|
-| `index.html` | 本地服务器 | 源码版，依赖走 `vendor/`（浏览器会拦截 file:// 下的 ES Module，需 http） |
-| `index-embedded.html` | **直接双击** | 单文件，three.js 全部内联，零外部请求，适合分发/归档。**构建产物，不入库**：本地 `pnpm run build` 生成，或直接从[线上站点](https://charlesliuyx.github.io/tree-ssot-explain/index-embedded.html)下载 |
+| `index.html` | 本地服务器 | 源码版（仅本地开发用），依赖走 `vendor/`（浏览器会拦截 file:// 下的 ES Module，需 http）；81 个模块请求 + 未压缩的 three.js，不用于上线 |
+| `index-embedded.html` | **直接双击** | 单文件，three.js 全部内联、整体 minify，零外部请求，适合分发/归档，**线上站点的首页就是它**（1 个请求，gzip 后约 330KB）。**构建产物，不入库**：本地 `pnpm run build` 生成，或直接从[线上站点](https://charlesliuyx.github.io/tree-ssot-explain/index-embedded.html)下载 |
 
 ```bash
 # 源码版（零构建，原生 ES Module + importmap）：
@@ -104,9 +104,10 @@ GitHub Pages 公开访问地址：
 
 每次推送到 `main` 都会触发 `.github/workflows/deploy-pages.yml`：先过验证门禁
 （静态校验 → 源码版冒烟 → 现场构建 `index-embedded.html` → 产物冒烟，任一失败即不部署；
-冒烟截图通过后清理、失败时上传为 artifact 供排查），再把静态站点发布到 GitHub Pages。部署 artifact
-只包含浏览器运行所需的文件：`index.html`、`index-embedded.html`（CI 现场构建）、
-`src/`、`styles/`、`vendor/`。
+冒烟截图通过后清理、失败时上传为 artifact 供排查），再把静态站点发布到 GitHub Pages。
+线上发布的是 CI 现场构建的单文件版：`_site/index.html` 与 `_site/index-embedded.html` 都是同一份
+`index-embedded.html`（首页 1 个请求、minify + gzip ≈330KB；源码版要 81 个请求、1.3MB 未压缩 three.js，
+实测 4G 下首屏可交互从 1.7s 缩到 0.8s，因此只留本地开发用）。
 
 ## 代码结构
 
@@ -211,7 +212,9 @@ three.js r160（importmap → 本地 `vendor/`）+ OrbitControls + 自研轻量 
   的每帧双次全场景递归遍历;transform / display / zIndex 带缓存,不变不写 DOM。
 - **解析拾取**：悬停与点击用「射线×球 / 射线×线段」解析求交,不再对数百个网格做三角形遍历。
 - **帧率调度**：空闲即停渲染(CPU 归零)、环境 60fps、交互放开到刷新率(封 120)；
-  机器跟不上时自适应降档(像素比 1.5→1.25→1.0,最后环境帧率退 30),只降不升。
+  机器跟不上时自适应降档(像素比 1.5→1.25→1.0,最后环境帧率退 30),只降不升——
+  CPU 侧看单帧实际耗时,GPU 侧看 rAF 节拍:片元受限(弱 GPU 的 Retina 全屏)在 CPU 耗时上看不见,
+  只会把 rAF 间隔拉长,于是以见过的最短间隔为显示器节拍基线,渲染期持续超过 1.6 倍即降档。
   一切自动播放(自转/揭示/轮播/生长)必须点击才开始,故**页面默认态即零渲染**;
   树之树长完自动停播休眠,鼠标停在 UI 面板上阅读/滚动也不唤醒 3D 渲染。
 - **交互期动态分辨率**:画布手势(拖拽/缩放)期间临时降到 dpr 1.2(Retina 片元省 ~36%),
