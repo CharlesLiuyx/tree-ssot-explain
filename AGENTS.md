@@ -19,7 +19,9 @@ git hooks in `.githooks/` via the `prepare` script).
   `http://127.0.0.1:4173/`.
 - Embedded version (`index-embedded.html`) is a self-contained single file with three.js inlined;
   it opens directly in a browser with zero external requests. It is a **build artifact and is NOT
-  committed** (gitignored) — generate it locally with `pnpm run build`; CI builds it on deploy.
+  committed** (gitignored) — generate it locally with `pnpm run build`; CI builds it on deploy
+  and publishes it as the GitHub Pages homepage (`_site/index.html` **is** the embedded build —
+  the source version with its 81 module requests is never deployed).
 
 ## Build
 
